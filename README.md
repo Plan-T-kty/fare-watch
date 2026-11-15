@@ -37,7 +37,7 @@ GitHub 알림을 끄려면 `data/config.json`의 `notify.githubIssue`를 `false`
 
 ## 노선과 목표가 바꾸기
 
-- **앱에서.** 내 노선 화면 아래 "이 기기에서 노선 바꾸기"에 토큰을 넣으면 앱에서 바로 고칠 수 있어요. 토큰은 GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens에서 이 저장소 하나만 고르고 Contents를 Read and write로 주면 돼요. Actions도 Read and write로 주면 "지금 가격 확인" 버튼이 눌려요. 토큰은 그 기기 브라우저에만 저장돼요.
+- **앱에서.** 기기마다 한 번 연결해야 해요. 연결하지 않은 기기에서는 보기만 되고, 노선 추가를 누르면 연결 순서가 나와요. 내 노선 화면 아래 "이 기기에서 노선 바꾸기"의 "GitHub에서 토큰 만들기"를 누르면 이름과 권한(Contents, Actions 쓰기)이 채워진 화면이 열려요. Repository access에서 Only select repositories를 고르고 이 저장소를 고른 뒤 Generate token을 누르고, 나온 토큰을 앱에 붙여 넣으면 돼요. 토큰은 그 기기 브라우저에만 저장돼요.
 - **파일로.** `data/config.json`을 GitHub에서 직접 고쳐도 돼요.
 
 `data/config.json`의 노선 항목:

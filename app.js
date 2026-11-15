@@ -213,6 +213,7 @@ function renderRoutes() {
   const box = $('#routes-list'), notice = $('#routes-notice');
   let n = '';
   if (S.mode === 'local') n = '<p class="banner">이 화면에서는 저장 기능을 쓸 수 없어요. 노선을 바꿔도 다시 열면 처음으로 돌아가요.</p>';
+  else if (S.mode === 'repo' && !S.err && !tokenStore.get()) n = '<p class="banner">지금은 보기만 돼요. 노선을 추가하거나 바꾸려면 이 기기를 한 번 연결하세요.<button type="button" class="btn line small" data-act="connect">연결하기</button></p>';
   else if (S.err === 'revoked') n = '<p class="banner">이 화면의 데이터 연결이 끊겼어요. 페이지를 다시 열어 주세요.</p>';
   else if (S.err) n = '<p class="banner">노선을 불러오지 못했어요. 잠시 뒤 페이지를 다시 열어 주세요.</p>';
   else if (S.slow && !S.confirmed) n = `<p class="banner">${S.loaded ? '보이는 내용이 최신이 아닐 수 있어요. 연결되면 자동으로 바뀌어요.' : '아직 데이터에 닿지 못했어요. 연결되면 자동으로 보여요.'}</p>`;
@@ -250,8 +251,10 @@ function renderHead() {
   $('#ask-now').hidden = repo;
   $('#repo-set').hidden = !repo;
   if (repo) {
-    $('#token-state').textContent = tokenStore.get() ? '이 기기에 편집용 토큰이 저장돼 있어요.' : '토큰이 없어서 지금은 보기만 할 수 있어요.';
+    $('#token-state').textContent = tokenStore.get() ? '이 기기는 연결돼 있어요. 노선을 바꿀 수 있어요.' : '아직 연결하지 않아서 지금은 보기만 할 수 있어요.';
     $('#run-now').hidden = !tokenStore.get();
+    const rn = repoName().split('/')[1];
+    if (rn) $('#repo-name').textContent = rn;
   }
 }
 function renderHolCal() {
@@ -568,6 +571,16 @@ async function repoSave(mutate, message) {
   } catch (e) { toast('저장하지 못했어요. 연결을 확인하고 다시 눌러 주세요.'); return false; }
 }
 
+/* on the repository copy, a device that is not connected yet cannot save: show how to connect instead */
+const needConnect = () => S.mode === 'repo' && !tokenStore.get();
+function openConnect() {
+  if (location.hash && location.hash !== '#routes') location.hash = '#routes';
+  const box = $('#repo-set');
+  box.open = true;
+  setTimeout(() => box.scrollIntoView({block: 'start'}), 60);
+  toast('이 기기에서 노선을 바꾸려면 먼저 한 번 연결해야 해요. 아래 순서대로 하면 돼요.');
+}
+
 /* ===================== data writes ===================== */
 async function putRoute(id, data, isNew) {
   if (S.mode === 'db') {
@@ -742,6 +755,7 @@ document.addEventListener('click', async e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
   const act = el.dataset.act, id = el.dataset.id;
+  if (act === 'connect' || (needConnect() && ['add', 'add-preset', 'edit', 'toggle'].includes(act))) return openConnect();
   if (act === 'add') openSheet(null, null);
   else if (act === 'add-preset') openSheet(null, {from: el.dataset.from, via: el.dataset.via || '', to: el.dataset.to});
   else if (act === 'edit') { const r = S.routes.find(x => x.id === id); if (r) openSheet(r); }
@@ -762,9 +776,16 @@ document.addEventListener('click', async e => {
   }
   else if (act === 'save-token') {
     const v = $('#token-input').value.trim();
+    if (v) {
+      el.disabled = true;
+      let bad = false;
+      try { const r = await fetch(`https://api.github.com/repos/${repoName()}`, {headers: {Authorization: 'Bearer ' + v, Accept: 'application/vnd.github+json'}, cache: 'no-store'}); bad = r.status === 401; } catch (err) { /* offline: keep it and let the first save tell */ }
+      el.disabled = false;
+      if (bad) { toast('토큰이 맞지 않아요. 복사한 값을 다시 확인해 주세요.'); return; }
+    }
     tokenStore.set(v);
     $('#token-input').value = '';
-    toast(v ? '토큰을 이 기기에 저장했어요.' : '토큰을 지웠어요.');
+    toast(v ? '연결했어요. 이제 노선을 추가하고 바꿀 수 있어요.' : '연결을 끊었어요.');
     render();
   }
   else if (act === 'run-now') { el.disabled = true; await repoRunNow(); el.disabled = false; }

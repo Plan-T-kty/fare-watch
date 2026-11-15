@@ -158,6 +158,9 @@ main{max-width:720px;margin:0 auto;padding:16px 16px 72px}
 .tagfoot{padding:11px 20px 16px;border-top:1.5px dashed var(--rule);font-size:12.5px;color:var(--soft)}
 
 .fb.off h4{color:var(--soft);font-weight:600}
+.steps{list-style:decimal;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.steps a{font-weight:600}
+.banner .btn{margin-left:8px;vertical-align:middle}
 /* a trip that continues on: one row per flight */
 .legs{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
 .legs li{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14px;align-items:baseline}
@@ -298,11 +301,17 @@ dialog::backdrop{background:var(--shade)}
       <details class="plainmore" id="repo-set" hidden>
         <summary>이 기기에서 노선 바꾸기</summary>
         <div class="in">
-          <p class="note">노선과 목표가는 GitHub 저장소에 들어 있어요. 이 저장소의 Contents 쓰기 권한만 가진 토큰을 넣으면 이 화면에서 바로 고칠 수 있어요. 토큰은 이 기기에만 저장돼요.</p>
           <p class="note" id="token-state"></p>
-          <div class="field"><label for="token-input">편집용 토큰</label><input id="token-input" type="password" autocomplete="off" placeholder="github_pat_로 시작해요"></div>
-          <div class="btns"><button type="button" class="btn line small" data-act="save-token">토큰 저장</button><button type="button" class="btn line small" data-act="run-now" id="run-now" hidden>지금 가격 확인</button></div>
-          <p class="note">칸을 비우고 저장하면 토큰이 지워져요. 지금 가격 확인은 토큰에 Actions 쓰기 권한도 있어야 눌려요.</p>
+          <p class="note">이 주소의 앱은 노선과 목표가를 GitHub 저장소에 두고 있어요. 그래서 기기마다 한 번 연결해야 여기서 바꿀 수 있어요.</p>
+          <ol class="steps">
+            <li><a href="https://github.com/settings/personal-access-tokens/new?name=fare-watch+app&amp;description=%ED%95%AD%EA%B3%B5%C2%B7%ED%8E%98%EB%A6%AC%20%EC%B5%9C%EC%A0%80%EA%B0%80%20%EC%95%8C%EB%A6%AC%EB%AF%B8%20%EC%95%B1%EC%97%90%EC%84%9C%20%EB%85%B8%EC%84%A0%EA%B3%BC%20%EB%AA%A9%ED%91%9C%EA%B0%80%EB%A5%BC%20%EB%B0%94%EA%BE%B8%EA%B3%A0%2C%20%EA%B0%80%EA%B2%A9%20%ED%99%95%EC%9D%B8%EC%9D%84%20%EB%B0%94%EB%A1%9C%20%EB%8F%8C%EB%A6%AC%EB%8A%94%20%EB%8D%B0%20%EC%93%B0%EB%8A%94%20%ED%86%A0%ED%81%B0&amp;expires_in=366&amp;contents=write&amp;actions=write">GitHub에서 토큰 만들기</a>를 열어요. 이름과 권한은 채워져 있어요.</li>
+            <li>Repository access에서 Only select repositories를 고르고 <b id="repo-name">이 앱의 저장소</b>를 골라요.</li>
+            <li>맨 아래 Generate token을 누르고, 나온 토큰을 복사해요.</li>
+            <li>아래 칸에 붙여 넣고 연결을 눌러요.</li>
+          </ol>
+          <div class="field"><label for="token-input">토큰</label><input id="token-input" type="password" autocomplete="off" placeholder="github_pat_로 시작해요"></div>
+          <div class="btns"><button type="button" class="btn solid small" data-act="save-token">연결</button><button type="button" class="btn line small" data-act="run-now" id="run-now" hidden>지금 가격 확인</button></div>
+          <p class="note">토큰은 이 기기 브라우저에만 저장돼요. 칸을 비우고 연결을 누르면 지워져요.</p>
         </div>
       </details>
       <details class="plainmore" id="hol-cal">
