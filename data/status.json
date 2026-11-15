@@ -1,20 +1,21 @@
 {
- "lastRunAt": "2026-11-15T14:05:06.188Z",
+ "lastRunAt": "2026-11-15T14:11:49.521Z",
  "schedule": "매일 오전 10시 49분쯤",
  "model": "claude-haiku-5-5",
  "fx": {
   "jpy100": 835.98,
   "from": "open.er-api.com"
  },
- "summary": "노선 3개를 확인했어요. 목표가 이하인 표는 아직 없어요.",
+ "summary": "노선 2개를 확인했어요. 목표가 이하인 표는 아직 없어요. 1개는 값을 읽지 못했어요.",
  "hits": [],
  "errors": [
-  "카약 후쿠오카→오키나와: 페이지가 열리지 않았어요"
+  "카약 서울→오키나와: 답을 알아볼 수 없었어요",
+  "카약 오키나와→인천: 답을 알아볼 수 없었어요"
  ],
  "usage": {
-  "calls": 11,
-  "input_tokens": 285254,
-  "output_tokens": 42734,
-  "fetches": 11
+  "calls": 12,
+  "input_tokens": 345421,
+  "output_tokens": 77954,
+  "fetches": 12
  }
 }
