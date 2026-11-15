@@ -1,6 +1,6 @@
 {
  "sel-fuk-rt": {
-  "checkedAt": "2026-11-15T14:12:30.833Z",
+  "checkedAt": "2026-11-15T14:21:24.609Z",
   "cands": [
    {
     "price": 226921,
@@ -9,7 +9,7 @@
     "from": "ICN",
     "to": "FUK",
     "src": "카약",
-    "ret": "2026-12-10"
+    "ret": "2026-12-09"
    },
    {
     "price": 226921,
@@ -18,7 +18,7 @@
     "from": "ICN",
     "to": "FUK",
     "src": "카약",
-    "ret": "2026-12-09"
+    "ret": "2026-12-10"
    },
    {
     "price": 232260,
@@ -104,42 +104,6 @@
    {
     "price": 249613,
     "airline": "항공사 조합",
-    "dep": "2026-11-20",
-    "from": "ICN",
-    "to": "FUK",
-    "src": "카약",
-    "ret": "2026-11-25"
-   },
-   {
-    "price": 257622,
-    "airline": "이스타 항공",
-    "dep": "2026-11-17",
-    "from": "ICN",
-    "to": "FUK",
-    "src": "카약",
-    "ret": "2026-11-18"
-   },
-   {
-    "price": 260292,
-    "airline": "이스타 항공",
-    "dep": "2026-11-17",
-    "from": "ICN",
-    "to": "FUK",
-    "src": "카약",
-    "ret": "2026-11-25"
-   },
-   {
-    "price": 260292,
-    "airline": "에어서울",
-    "dep": "2026-11-17",
-    "from": "ICN",
-    "to": "FUK",
-    "src": "카약",
-    "ret": "2027-01-05"
-   },
-   {
-    "price": 284318,
-    "airline": "에어서울",
     "dep": "2026-11-20",
     "from": "ICN",
     "to": "FUK",
@@ -328,146 +292,32 @@
    "src": "카약"
   },
   "lastError": "맞는 표를 찾지 못했어요",
-  "lastTriedAt": "2026-11-15T14:13:39.886Z"
+  "lastTriedAt": "2026-11-15T14:22:36.649Z"
  },
  "icn-fuk-oka-chain": {
-  "checkedAt": "2026-11-15T14:17:15.165Z",
+  "checkedAt": "2026-11-15T14:26:48.924Z",
   "cands": [
    {
-    "price": 288527,
-    "dep": "2026-12-08",
-    "ret": "2026-12-10",
+    "price": 336889,
+    "dep": "2027-03-03",
+    "ret": "2027-03-11",
     "airline": "구간 조합",
     "from": "ICN",
     "to": "OKA",
     "src": "조합",
     "legs": [
      {
-      "price": 102332,
-      "dep": "2026-12-08",
-      "airline": "이스타항공",
+      "price": 99770,
+      "dep": "2027-03-03",
+      "airline": "에어서울",
       "from": "ICN",
       "to": "FUK",
       "src": "스카이스캐너",
       "jpy": 0
      },
      {
-      "price": 49992,
-      "dep": "2026-12-09",
-      "airline": "",
-      "from": "FUK",
-      "to": "OKA",
-      "src": "트래블리스트",
-      "jpy": 5980
-     },
-     {
-      "price": 136203,
-      "dep": "2026-12-10",
-      "airline": "제주항공",
-      "from": "OKA",
-      "to": "ICN",
-      "src": "호텔스컴바인",
-      "jpy": 0
-     }
-    ]
-   },
-   {
-    "price": 288977,
-    "dep": "2026-12-08",
-    "ret": "2026-12-10",
-    "airline": "구간 조합",
-    "from": "ICN",
-    "to": "OKA",
-    "src": "조합",
-    "legs": [
-     {
-      "price": 102782,
-      "dep": "2026-12-08",
-      "airline": "제주항공",
-      "from": "ICN",
-      "to": "FUK",
-      "src": "카약",
-      "jpy": 0
-     },
-     {
-      "price": 49992,
-      "dep": "2026-12-09",
-      "airline": "",
-      "from": "FUK",
-      "to": "OKA",
-      "src": "트래블리스트",
-      "jpy": 5980
-     },
-     {
-      "price": 136203,
-      "dep": "2026-12-10",
-      "airline": "제주항공",
-      "from": "OKA",
-      "to": "ICN",
-      "src": "호텔스컴바인",
-      "jpy": 0
-     }
-    ]
-   },
-   {
-    "price": 290312,
-    "dep": "2026-12-08",
-    "ret": "2026-12-10",
-    "airline": "구간 조합",
-    "from": "ICN",
-    "to": "OKA",
-    "src": "조합",
-    "legs": [
-     {
-      "price": 104117,
-      "dep": "2026-12-08",
-      "airline": "이스타 항공",
-      "from": "ICN",
-      "to": "FUK",
-      "src": "카약",
-      "jpy": 0
-     },
-     {
-      "price": 49992,
-      "dep": "2026-12-09",
-      "airline": "",
-      "from": "FUK",
-      "to": "OKA",
-      "src": "트래블리스트",
-      "jpy": 5980
-     },
-     {
-      "price": 136203,
-      "dep": "2026-12-10",
-      "airline": "제주항공",
-      "from": "OKA",
-      "to": "ICN",
-      "src": "호텔스컴바인",
-      "jpy": 0
-     }
-    ]
-   },
-   {
-    "price": 294828,
-    "dep": "2026-12-02",
-    "ret": "2026-12-10",
-    "airline": "구간 조합",
-    "from": "ICN",
-    "to": "OKA",
-    "src": "조합",
-    "legs": [
-     {
-      "price": 102782,
-      "dep": "2026-12-02",
-      "airline": "진에어",
-      "from": "ICN",
-      "to": "FUK",
-      "src": "카약",
-      "jpy": 0
-     },
-     {
       "price": 55843,
-      "dep": "2026-12-03",
+      "dep": "2027-03-08",
       "airline": "",
       "from": "FUK",
       "to": "OKA",
@@ -475,58 +325,20 @@
       "jpy": 6680
      },
      {
-      "price": 136203,
-      "dep": "2026-12-10",
-      "airline": "제주항공",
+      "price": 181276,
+      "dep": "2027-03-11",
+      "airline": "이스타항공",
       "from": "OKA",
       "to": "ICN",
-      "src": "호텔스컴바인",
+      "src": "스카이스캐너",
       "jpy": 0
      }
     ]
    },
    {
-    "price": 297497,
-    "dep": "2026-12-01",
-    "ret": "2026-12-10",
-    "airline": "구간 조합",
-    "from": "ICN",
-    "to": "OKA",
-    "src": "조합",
-    "legs": [
-     {
-      "price": 105451,
-      "dep": "2026-12-01",
-      "airline": "이스타 항공",
-      "from": "ICN",
-      "to": "FUK",
-      "src": "호텔스컴바인",
-      "jpy": 0
-     },
-     {
-      "price": 55843,
-      "dep": "2026-12-03",
-      "airline": "",
-      "from": "FUK",
-      "to": "OKA",
-      "src": "트래블리스트",
-      "jpy": 6680
-     },
-     {
-      "price": 136203,
-      "dep": "2026-12-10",
-      "airline": "제주항공",
-      "from": "OKA",
-      "to": "ICN",
-      "src": "호텔스컴바인",
-      "jpy": 0
-     }
-    ]
-   },
-   {
-    "price": 298832,
-    "dep": "2026-12-01",
-    "ret": "2026-12-10",
+    "price": 338054,
+    "dep": "2027-03-09",
+    "ret": "2027-03-11",
     "airline": "구간 조합",
     "from": "ICN",
     "to": "OKA",
@@ -534,16 +346,92 @@
     "legs": [
      {
       "price": 106786,
-      "dep": "2026-12-01",
-      "airline": "제주항공",
+      "dep": "2027-03-09",
+      "airline": "에어서울",
       "from": "ICN",
       "to": "FUK",
-      "src": "호텔스컴바인",
+      "src": "카약",
+      "jpy": 0
+     },
+     {
+      "price": 49992,
+      "dep": "2027-03-10",
+      "airline": "",
+      "from": "FUK",
+      "to": "OKA",
+      "src": "트래블리스트",
+      "jpy": 5980
+     },
+     {
+      "price": 181276,
+      "dep": "2027-03-11",
+      "airline": "이스타항공",
+      "from": "OKA",
+      "to": "ICN",
+      "src": "스카이스캐너",
+      "jpy": 0
+     }
+    ]
+   },
+   {
+    "price": 346063,
+    "dep": "2027-03-04",
+    "ret": "2027-03-11",
+    "airline": "구간 조합",
+    "from": "ICN",
+    "to": "OKA",
+    "src": "조합",
+    "legs": [
+     {
+      "price": 114795,
+      "dep": "2027-03-04",
+      "airline": "트리니티항공 (구 티웨이항공)",
+      "from": "ICN",
+      "to": "FUK",
+      "src": "카약",
+      "jpy": 0
+     },
+     {
+      "price": 49992,
+      "dep": "2027-03-09",
+      "airline": "",
+      "from": "FUK",
+      "to": "OKA",
+      "src": "트래블리스트",
+      "jpy": 5980
+     },
+     {
+      "price": 181276,
+      "dep": "2027-03-11",
+      "airline": "이스타항공",
+      "from": "OKA",
+      "to": "ICN",
+      "src": "스카이스캐너",
+      "jpy": 0
+     }
+    ]
+   },
+   {
+    "price": 349245,
+    "dep": "2027-03-03",
+    "ret": "2027-03-11",
+    "airline": "구간 조합",
+    "from": "ICN",
+    "to": "OKA",
+    "src": "조합",
+    "legs": [
+     {
+      "price": 112126,
+      "dep": "2027-03-03",
+      "airline": "트리니티항공 (구 티웨이항공)",
+      "from": "ICN",
+      "to": "FUK",
+      "src": "카약",
       "jpy": 0
      },
      {
       "price": 55843,
-      "dep": "2026-12-03",
+      "dep": "2027-03-08",
       "airline": "",
       "from": "FUK",
       "to": "OKA",
@@ -551,12 +439,50 @@
       "jpy": 6680
      },
      {
-      "price": 136203,
-      "dep": "2026-12-10",
-      "airline": "제주항공",
+      "price": 181276,
+      "dep": "2027-03-11",
+      "airline": "이스타항공",
       "from": "OKA",
       "to": "ICN",
-      "src": "호텔스컴바인",
+      "src": "스카이스캐너",
+      "jpy": 0
+     }
+    ]
+   },
+   {
+    "price": 448286,
+    "dep": "2027-06-02",
+    "ret": "2027-06-10",
+    "airline": "구간 조합",
+    "from": "ICN",
+    "to": "OKA",
+    "src": "조합",
+    "legs": [
+     {
+      "price": 130213,
+      "dep": "2027-06-02",
+      "airline": "이스타항공",
+      "from": "ICN",
+      "to": "FUK",
+      "src": "스카이스캐너",
+      "jpy": 0
+     },
+     {
+      "price": 94644,
+      "dep": "2027-06-03",
+      "airline": "저팬트랜스오션에어",
+      "from": "FUK",
+      "to": "OKA",
+      "src": "스카이스캐너",
+      "jpy": 0
+     },
+     {
+      "price": 223429,
+      "dep": "2027-06-10",
+      "airline": "이스타항공",
+      "from": "OKA",
+      "to": "ICN",
+      "src": "스카이스캐너",
       "jpy": 0
      }
     ]
@@ -633,120 +559,6 @@
       "from": "OKA",
       "to": "ICN",
       "src": "스카이스캐너",
-      "jpy": 0
-     }
-    ]
-   },
-   {
-    "price": 304187,
-    "dep": "2026-11-20",
-    "ret": "2026-12-02",
-    "airline": "구간 조합",
-    "from": "ICN",
-    "to": "OKA",
-    "src": "조합",
-    "legs": [
-     {
-      "price": 102782,
-      "dep": "2026-11-20",
-      "airline": "제주항공",
-      "from": "ICN",
-      "to": "FUK",
-      "src": "카약",
-      "jpy": 0
-     },
-     {
-      "price": 62531,
-      "dep": "2026-11-25",
-      "airline": "",
-      "from": "FUK",
-      "to": "OKA",
-      "src": "트래블리스트",
-      "jpy": 7480
-     },
-     {
-      "price": 138874,
-      "dep": "2026-12-02",
-      "airline": "이스타 항공",
-      "from": "OKA",
-      "to": "ICN",
-      "src": "호텔스컴바인",
-      "jpy": 0
-     }
-    ]
-   },
-   {
-    "price": 308193,
-    "dep": "2026-11-20",
-    "ret": "2026-11-26",
-    "airline": "구간 조합",
-    "from": "ICN",
-    "to": "OKA",
-    "src": "조합",
-    "legs": [
-     {
-      "price": 102782,
-      "dep": "2026-11-20",
-      "airline": "제주항공",
-      "from": "ICN",
-      "to": "FUK",
-      "src": "카약",
-      "jpy": 0
-     },
-     {
-      "price": 62531,
-      "dep": "2026-11-25",
-      "airline": "",
-      "from": "FUK",
-      "to": "OKA",
-      "src": "트래블리스트",
-      "jpy": 7480
-     },
-     {
-      "price": 142880,
-      "dep": "2026-11-26",
-      "airline": "이스타 항공",
-      "from": "OKA",
-      "to": "ICN",
-      "src": "호텔스컴바인",
-      "jpy": 0
-     }
-    ]
-   },
-   {
-    "price": 406979,
-    "dep": "2026-11-20",
-    "ret": "2026-11-25",
-    "airline": "구간 조합",
-    "from": "ICN",
-    "to": "OKA",
-    "src": "조합",
-    "legs": [
-     {
-      "price": 102782,
-      "dep": "2026-11-20",
-      "airline": "제주항공",
-      "from": "ICN",
-      "to": "FUK",
-      "src": "카약",
-      "jpy": 0
-     },
-     {
-      "price": 145293,
-      "dep": "2026-11-22",
-      "airline": "",
-      "from": "FUK",
-      "to": "OKA",
-      "src": "트래블리스트",
-      "jpy": 17380
-     },
-     {
-      "price": 158904,
-      "dep": "2026-11-25",
-      "airline": "이스타 항공",
-      "from": "OKA",
-      "to": "ICN",
-      "src": "호텔스컴바인",
       "jpy": 0
      }
     ]
@@ -791,14 +603,13 @@
    }
   ],
   "srcUrls": {
-   "카약": "https://www.kayak.co.kr/flight-routes/Incheon-ICN/Fukuoka-FUK",
+   "카약": "https://www.kayak.co.kr/flight-routes/Okinawa-OKA/Incheon-ICN",
    "스카이스캐너": "https://www.skyscanner.co.kr/routes/oka/icn/okinawa-to-incheon.html",
-   "호텔스컴바인": "https://www.hotelscombined.co.kr/flight-routes/Okinawa-OKA/Incheon-ICN.ksp",
    "트래블리스트": "https://travelist.jp/airport_OKA/airport_FUK/"
   },
   "hist": {
    "2026-11-15": {
-    "n": 288527,
+    "n": 336889,
     "h": 300342
    }
   },
