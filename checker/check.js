@@ -116,6 +116,7 @@ Rules
 - from / to: the three-letter airport codes if printed for that fare, else "".
 - nonstop: 1 if the fare is shown as nonstop on every leg, 0 if it shows a stop, null if the page does not say.
 - At most 40 rt rows and 40 ow rows, cheapest first. On a calendar page with one lowest fare per day, list every day that has a price in every month shown, up to 200 rows.
+- Write each fare once. Never repeat a row, and stop when the list is done.
 - note: one short sentence in Korean if something on the page looks off, else "".`;
 }
 function parseJson(text) {
@@ -129,23 +130,28 @@ function parseJson(text) {
   }
   return null;
 }
-/* a cut-off answer: keep everything up to the last finished row */
+/* rows found one by one in the answer text: works on answers that are cut off, repeated or broken in the middle */
+function scanRows(text) {
+  const rt = [], ow = [], seen = new Set();
+  const re = /\[\s*\d+(?:\.\d+)?\s*,\s*"\d{4}-\d{2}-\d{2}"[^\[\]]*\]/g;
+  let m;
+  while ((m = re.exec(text)) && rt.length + ow.length < 400) {
+    if (seen.has(m[0])) continue;
+    seen.add(m[0]);
+    let row;
+    try { row = JSON.parse(m[0]); } catch (e) { continue; }
+    (typeof row[2] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row[2]) ? rt : ow).push(row);
+  }
+  return {rt, ow};
+}
 function parseAnswer(text) {
   const whole = parseJson(text);
   if (whole) return {value: whole, cut: false};
-  const s = String(text || ''), start = s.indexOf('{');
-  if (start < 0) return {value: null, cut: false};
-  let body = s.slice(start);
-  for (let i = 0; i < 80; i++) {
-    const end = Math.max(body.lastIndexOf(']'), body.lastIndexOf('}'));
-    if (end < 1) break;
-    body = body.slice(0, end + 1);
-    for (const tail of [']}', '}', ']]}', '']) {
-      try { const v = JSON.parse(body + tail); if (v && typeof v === 'object' && !Array.isArray(v)) return {value: v, cut: true}; } catch (e) { /* try the next ending */ }
-    }
-    body = body.slice(0, end);
-  }
-  return {value: null, cut: false};
+  const s = String(text || '');
+  const rows = scanRows(s);
+  if (!rows.rt.length && !rows.ow.length) return {value: null, cut: false};
+  const cur = (/"cur"\s*:\s*"(KRW|JPY)"/.exec(s) || [])[1];
+  return {value: {ok: true, cur, rt: rows.rt, ow: rows.ow}, cut: true};
 }
 const flag = v => (v === 1 || v === true ? true : v === 0 || v === false ? false : null);
 /* a row from the compact answer, or an object from the older shape */
@@ -160,7 +166,7 @@ async function readSource(src, leg, cfg) {
   const host = new URL(src.url).hostname;
   const body = {
     model: cfg.model || 'claude-haiku-5-5',
-    max_tokens: 14000,
+    max_tokens: 7000,
     system: SYSTEM,
     tools: [{type: 'web_fetch_20250910', name: 'web_fetch', max_uses: 1, max_content_tokens: src.maxContentTokens || Number(cfg.maxContentTokens) || 40000, allowed_domains: [host]}],
     messages: [{role: 'user', content: promptFor(src, leg)}]
@@ -189,7 +195,8 @@ async function readSource(src, leg, cfg) {
   if (answer.ok === false) return {ok: false, error: 'not_a_fare_page', note: C.str(answer.reason, 120), diag};
   const cur = String(answer.cur || src.currency || 'KRW').toUpperCase();
   const keep = (list, round) => {
-    const rows = (Array.isArray(list) ? list : []).slice(0, 220);
+    const seenRows = new Set();
+    const rows = (Array.isArray(list) ? list : []).filter(row => { const k = JSON.stringify(row); if (seenRows.has(k)) return false; seenRows.add(k); return true; }).slice(0, 220);
     diag.got[round ? 0 : 1] += rows.length;
     const out = [];
     for (const row of rows) {
@@ -200,7 +207,19 @@ async function readSource(src, leg, cfg) {
     }
     return out;
   };
-  const roundtrips = keep(answer.rt || answer.roundtrips, true), oneways = keep(answer.ow || answer.oneways, false);
+  // a "return" printed as the same 31 December on several rows is a placeholder, not a flight: those rows are one-way fares
+  let rtRows = Array.isArray(answer.rt || answer.roundtrips) ? (answer.rt || answer.roundtrips) : [];
+  let owRows = Array.isArray(answer.ow || answer.oneways) ? (answer.ow || answer.oneways) : [];
+  const retOf = row => (Array.isArray(row) ? row[2] : row && row.ret);
+  const sameRet = {};
+  for (const row of rtRows) { const d = retOf(row); if (typeof d === 'string') sameRet[d] = (sameRet[d] || 0) + 1; }
+  const fake = new Set(Object.keys(sameRet).filter(d => /-12-31$/.test(d) && sameRet[d] >= 3));
+  if (fake.size) {
+    owRows = owRows.concat(rtRows.filter(row => fake.has(retOf(row))).map(row => (Array.isArray(row) ? [row[0], row[1], row[3], row[4], row[5], row[6]] : Object.assign({}, row, {ret: undefined}))));
+    rtRows = rtRows.filter(row => !fake.has(retOf(row)));
+    diag.placeholder = true;
+  }
+  const roundtrips = keep(rtRows, true), oneways = keep(owRows, false);
   if (!roundtrips.length && !oneways.length) {   // nothing survived: show what prices on the page look like
     const re = /[₩¥]\s?\d{1,3}(?:[,.]\d{3})+|\d{1,3}(?:[,.]\d{3})+\s?(?:원|円|엔)/g;
     let m;
@@ -244,7 +263,9 @@ async function legFares(leg, cfg, errors, oneWays) {
     if (!got) {
       try {
         got = await readSource(src, leg, cfg);
+        const empty = !got.ok || (!got.roundtrips.length && !got.oneways.length);
         if (!got.ok && got.error === 'no_fetch') got = await readSource(src, leg, cfg);   // Claude answered without fetching: once more
+        else if (empty && got.diag && got.diag.stop === 'max_tokens') got = await readSource(src, leg, cfg);   // ran to the length limit and gave nothing: once more
       } catch (e) {
         if (e.fatal) throw e;
         got = {ok: false, error: e.message};
@@ -261,7 +282,7 @@ async function legFares(leg, cfg, errors, oneWays) {
         const d = got.diag;
         if (d) {
           const drops = Object.keys(d.drops).map(k => `${k} ${d.drops[k]}`).join(', ');
-          log(`      받은 줄 왕복 ${d.got[0]}, 편도 ${d.got[1]}${drops ? '. 버림: ' + drops : ''}. 글 ${d.chars}자, 끝 ${d.stop}${d.cut ? ', 답이 잘려서 끝난 줄까지만 씀' : ''}`);
+          log(`      받은 줄 왕복 ${d.got[0]}, 편도 ${d.got[1]}${drops ? '. 버림: ' + drops : ''}. 글 ${d.chars}자, 끝 ${d.stop}${d.cut ? ', 답이 온전하지 않아 읽을 수 있는 줄만 씀' : ''}${d.placeholder ? ', 오는 날이 자리표시인 줄은 편도로 옮김' : ''}`);
           for (const x of d.samples) log(`      버린 예 ${x}`);
           for (const x of d.snippets) log(`      페이지 글 ${x}`);
         }
