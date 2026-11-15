@@ -33,9 +33,9 @@ const slug = c => enName(c).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^
 const capSlug = c => enName(c).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || c;
 function sourcesFor(from, to, cfg) {
   const custom = cfg.sources && cfg.sources[`${from}-${to}`];
-  if (Array.isArray(custom) && custom.length) return custom.filter(s => s && s.name && C.httpUrl(s.url)).map(s => ({name: String(s.name), url: String(s.url), currency: s.currency === 'JPY' ? 'JPY' : 'KRW'}));
+  if (Array.isArray(custom) && custom.length) return custom.filter(s => s && s.name && C.httpUrl(s.url)).map(s => ({name: String(s.name), url: String(s.url), currency: s.currency === 'JPY' ? 'JPY' : 'KRW', maxContentTokens: Number(s.maxContentTokens) || 0}));
   const list = [
-    {name: '카약', url: `https://www.kayak.co.kr/flight-routes/${capSlug(from)}-${from}/${capSlug(to)}-${to}`, currency: 'KRW'},
+    {name: '카약', url: `https://www.kayak.co.kr/flight-routes/${capSlug(from)}-${from}/${capSlug(to)}-${to}`, currency: 'KRW', maxContentTokens: 80000},
     {name: '스카이스캐너', url: `https://www.skyscanner.co.kr/routes/${SKY[from] || from.toLowerCase()}/${SKY[to] || to.toLowerCase()}/${slug(from)}-to-${slug(to)}.html`, currency: 'KRW'}
   ];
   // a Japanese site with a day-by-day calendar of the lowest posted fare, for flights inside Japan
@@ -91,25 +91,28 @@ Fetch this page with the web_fetch tool, once: ${src.url}
 It should be a fare page on ${src.name} for flights from ${enName(leg.from)} (${a.ko}, ${leg.from}) to ${enName(leg.to)} (${b.ko}, ${leg.to}). Prices on it are in ${src.currency}.
 List the fares printed on the fetched page. Use nothing but that page.
 
-Answer with one JSON object only, in this shape:
-{"ok":true,
- "roundtrips":[{"price":123456,"currency":"${src.currency}","airline":"","dep":"YYYY-MM-DD","ret":"YYYY-MM-DD","from":"","to":"","nonstop":true}],
- "oneways":[{"price":123456,"currency":"${src.currency}","airline":"","dep":"YYYY-MM-DD","from":"","to":"","nonstop":true}],
+Answer with one JSON object only, in this compact shape. Each fare is one row (an array), not an object:
+{"ok":true,"cur":"${src.currency}",
+ "rt":[[123456,"YYYY-MM-DD","YYYY-MM-DD","airline",1,"",""]],
+ "ow":[[123456,"YYYY-MM-DD","airline",1,"",""]],
  "note":""}
+rt row (round trip): price, departure date, return date, airline, nonstop, from, to.
+ow row (one way): price, date, airline, nonstop, from, to.
 If the fetch fails, or the page is not a fare page for this route, answer {"ok":false,"reason":"<short reason>"}.
 
 Rules
 - price: the integer exactly as printed, without separators. Never rounded, never converted.
 - Dates: pages usually print month and day without a year. Use the first such date on or after today. Leave out a fare whose date is missing, marked as invalid, or already past.
 - 왕복 is a round trip, 편도 is one way, 직항 is nonstop, 경유 means it has a stop.
-- A "round trip" whose return leg is a placeholder (for example a return at 00:00 lasting 0 minutes, or the same placeholder date on every row) is really a one-way fare: put it in oneways.
-- A table of the lowest one-way fare per month: each row with a date is one oneways entry.
-- A calendar of the lowest fare per day: each day with a price is one oneways entry.
-- A round trip belongs in roundtrips only when both its departure date and its return date are printed.
+- A "round trip" whose return leg is a placeholder (for example a return at 00:00 lasting 0 minutes, or the same placeholder date on every row) is really a one-way fare: put it in ow.
+- A table of the lowest one-way fare per month: each row with a date is one ow row.
+- A calendar of the lowest fare per day: each day with a price is one ow row.
+- A round trip belongs in rt only when both its departure date and its return date are printed.
 - airline: as printed (Korean if printed in Korean). Mixed airlines: "항공사 조합". Not printed: "".
 - from / to: the three-letter airport codes if printed for that fare, else "".
-- nonstop: true if the fare is shown as nonstop on every leg, false if it shows a stop, null if the page does not say.
-- At most 40 roundtrips and 90 oneways, cheapest first. note: one short sentence in Korean if something on the page looks off, else "".`;
+- nonstop: 1 if the fare is shown as nonstop on every leg, 0 if it shows a stop, null if the page does not say.
+- At most 40 rt rows and 40 ow rows, cheapest first. On a calendar page with one lowest fare per day, list every day that has a price, up to 100 rows.
+- note: one short sentence in Korean if something on the page looks off, else "".`;
 }
 function parseJson(text) {
   const s = String(text || '');
@@ -122,21 +125,48 @@ function parseJson(text) {
   }
   return null;
 }
+/* a cut-off answer: keep everything up to the last finished row */
+function parseAnswer(text) {
+  const whole = parseJson(text);
+  if (whole) return {value: whole, cut: false};
+  const s = String(text || ''), start = s.indexOf('{');
+  if (start < 0) return {value: null, cut: false};
+  let body = s.slice(start);
+  for (let i = 0; i < 80; i++) {
+    const end = Math.max(body.lastIndexOf(']'), body.lastIndexOf('}'));
+    if (end < 1) break;
+    body = body.slice(0, end + 1);
+    for (const tail of [']}', '}', ']]}', '']) {
+      try { const v = JSON.parse(body + tail); if (v && typeof v === 'object' && !Array.isArray(v)) return {value: v, cut: true}; } catch (e) { /* try the next ending */ }
+    }
+    body = body.slice(0, end);
+  }
+  return {value: null, cut: false};
+}
+const flag = v => (v === 1 || v === true ? true : v === 0 || v === false ? false : null);
+/* a row from the compact answer, or an object from the older shape */
+function rowToFare(row, round, cur) {
+  if (!Array.isArray(row)) return row && typeof row === 'object' ? Object.assign({currency: cur}, row, {nonstop: flag(row.nonstop)}) : null;
+  return round
+    ? {price: row[0], dep: row[1], ret: row[2], airline: row[3], nonstop: flag(row[4]), from: row[5], to: row[6], currency: cur}
+    : {price: row[0], dep: row[1], airline: row[2], nonstop: flag(row[3]), from: row[4], to: row[5], currency: cur};
+}
 /* one page: fetched by Claude, listed by Claude, checked here */
 async function readSource(src, leg, cfg) {
   const host = new URL(src.url).hostname;
   const body = {
     model: cfg.model || 'claude-haiku-5-5',
-    max_tokens: 8000,
+    max_tokens: 12000,
     system: SYSTEM,
-    tools: [{type: 'web_fetch_20250910', name: 'web_fetch', max_uses: 1, max_content_tokens: Number(cfg.maxContentTokens) || 40000, allowed_domains: [host]}],
+    tools: [{type: 'web_fetch_20250910', name: 'web_fetch', max_uses: 1, max_content_tokens: src.maxContentTokens || Number(cfg.maxContentTokens) || 40000, allowed_domains: [host]}],
     messages: [{role: 'user', content: promptFor(src, leg)}]
   };
-  let content = [];
+  let content = [], stop = '';
   for (let turn = 0; turn < 4; turn++) {
     const res = await callClaude(body);
     addUsage(res.usage);
     content = content.concat(Array.isArray(res.content) ? res.content : []);
+    stop = String(res.stop_reason || '');
     if (res.stop_reason !== 'pause_turn') break;
     body.messages = [body.messages[0], {role: 'assistant', content}];   // a paused turn continues from what it has so far
   }
@@ -146,27 +176,52 @@ async function readSource(src, leg, cfg) {
     const bad = results.find(b => b.content.type === 'web_fetch_tool_result_error');
     return {ok: false, error: bad ? String(bad.content.error_code || 'fetch_error') : 'no_fetch'};
   }
-  const pageText = pages.map(b => { const d = b.content.content, s = d && d.source; return s && s.type === 'text' ? String(s.data || '') : ''; }).join('\n')
-    .replace(/[,.\u00a0\u202f]/g, '');   // 226,921 and 226.921 both read as 226921
-  const answer = parseJson(content.filter(b => b && b.type === 'text').map(b => b.text).join('\n'));
-  if (!answer) return {ok: false, error: 'no_answer'};
-  if (answer.ok === false) return {ok: false, error: 'not_a_fare_page', note: C.str(answer.reason, 120)};
-  const keep = (list, round) => (Array.isArray(list) ? list : []).slice(0, 120).map(o => cleanFare(o, round, src, leg, pageText, cfg)).filter(Boolean);
-  return {ok: true, roundtrips: keep(answer.roundtrips, true), oneways: keep(answer.oneways, false), checked: !!pageText};
+  const rawText = pages.map(b => { const d = b.content.content, s = d && d.source; return s && s.type === 'text' ? String(s.data || '') : ''; }).join('\n');
+  const pageText = rawText.replace(/[,.\u00a0\u202f]/g, '');   // 226,921 and 226.921 both read as 226921
+  const parsed = parseAnswer(content.filter(b => b && b.type === 'text').map(b => b.text).join('\n'));
+  const answer = parsed.value;
+  const diag = {chars: rawText.length, stop, cut: parsed.cut, got: [0, 0], drops: {}, samples: [], snippets: []};
+  if (!answer) return {ok: false, error: 'no_answer', diag};
+  if (answer.ok === false) return {ok: false, error: 'not_a_fare_page', note: C.str(answer.reason, 120), diag};
+  const cur = String(answer.cur || src.currency || 'KRW').toUpperCase();
+  const keep = (list, round) => {
+    const rows = (Array.isArray(list) ? list : []).slice(0, 140);
+    diag.got[round ? 0 : 1] += rows.length;
+    const out = [];
+    for (const row of rows) {
+      const why = {};
+      const fare = cleanFare(rowToFare(row, round, cur), round, src, leg, pageText, cfg, why);
+      if (fare) out.push(fare);
+      else { diag.drops[why.reason] = (diag.drops[why.reason] || 0) + 1; if (diag.samples.length < 3) diag.samples.push(`${why.reason}: ${JSON.stringify(row).slice(0, 110)}`); }
+    }
+    return out;
+  };
+  const roundtrips = keep(answer.rt || answer.roundtrips, true), oneways = keep(answer.ow || answer.oneways, false);
+  if (!roundtrips.length && !oneways.length) {   // nothing survived: show what prices on the page look like
+    const re = /[₩¥]\s?\d{1,3}(?:[,.]\d{3})+|\d{1,3}(?:[,.]\d{3})+\s?(?:원|円|엔)/g;
+    let m;
+    while (diag.snippets.length < 3 && (m = re.exec(rawText))) { diag.snippets.push(rawText.slice(Math.max(0, m.index - 50), m.index + 70).replace(/\s+/g, ' ')); re.lastIndex = m.index + 400; }
+    if (!diag.snippets.length) diag.snippets.push('가격 꼴의 글자가 없음. 글 첫머리: ' + rawText.slice(0, 160).replace(/\s+/g, ' '));
+  }
+  return {ok: true, roundtrips, oneways, checked: !!pageText, diag};
 }
 /* a fare is kept only if it is plausible, in the future, nonstop where the page says, and its price is printed on the page */
-function cleanFare(o, round, src, leg, pageText, cfg) {
-  if (!o || typeof o !== 'object') return null;
+function cleanFare(o, round, src, leg, pageText, cfg, why) {
+  const no = reason => { if (why) why.reason = reason; return null; };
+  if (!o || typeof o !== 'object') return no('꼴이 다름');
   const cur = String(o.currency || src.currency || 'KRW').toUpperCase();
   const raw = Math.round(Number(o.price));
-  if (!(raw > 0)) return null;
-  if (cur === 'KRW' ? (raw < 15000 || raw > 5000000) : cur === 'JPY' ? (raw < 1500 || raw > 500000) : true) return null;
-  if (!C.isDate(o.dep) || o.dep < TODAY || o.dep > C.addDays(TODAY, 370)) return null;
-  if (round && (!C.isDate(o.ret) || o.ret < o.dep || C.diffDays(o.dep, o.ret) > 60)) return null;
-  if (o.nonstop === false) return null;
+  if (!(raw > 0)) return no('값이 숫자가 아님');
+  if (cur !== 'KRW' && cur !== 'JPY') return no('다른 통화 ' + cur.slice(0, 4));
+  if (cur === 'KRW' ? (raw < 15000 || raw > 5000000) : (raw < 1500 || raw > 500000)) return no('값이 범위 밖');
+  if (!C.isDate(o.dep)) return no('날짜 없음');
+  if (o.dep < TODAY) return no('지난 날짜');
+  if (o.dep > C.addDays(TODAY, 370)) return no('너무 먼 날짜');
+  if (round && (!C.isDate(o.ret) || o.ret < o.dep || C.diffDays(o.dep, o.ret) > 60)) return no('오는 날이 없거나 이상함');
+  if (o.nonstop === false) return no('경유');
   const airline = C.str(o.airline, 30);
-  if (/한에어|hahn/i.test(airline)) return null;   // a ticketing company's code, not an airline that flies the route
-  if (pageText && !pageText.includes(String(raw))) return null;   // not printed on the page: not kept
+  if (/한에어|hahn/i.test(airline)) return no('발권 대행 코드');   // a ticketing company's code, not an airline that flies the route
+  if (pageText && !pageText.includes(String(raw))) return no('페이지에 없는 값');   // not printed on the page: not kept
   const code = v => (/^[A-Z]{3}$/.test(String(v || '')) ? String(v) : '');
   const price = cur === 'JPY' ? Math.round(raw * cfg.jpy100 / 100) : raw;
   const out = {price, airline, dep: o.dep, from: code(o.from) || leg.from, to: code(o.to) || leg.to, src: src.name};
@@ -191,12 +246,19 @@ async function legFares(leg, cfg, errors) {
       if (e.fatal) throw e;
       got = {ok: false, error: e.message};
     }
-    if (!got.ok) { errors.push(`${label}: ${explain(got.error)}`); log(`  ✗ ${label}: ${got.error}${got.note ? ' (' + got.note + ')' : ''}`); continue; }
+    if (!got.ok) { errors.push(`${label}: ${explain(got.error)}`); log(`  ✗ ${label}: ${got.error}${got.note ? ' (' + got.note + ')' : ''}${got.diag ? ` [글 ${got.diag.chars}자, 끝 ${got.diag.stop}]` : ''}`); continue; }
     out.read++;
     out.srcUrls[src.name] = src.url;
     out.roundtrips.push(...got.roundtrips);
     out.oneways.push(...got.oneways);
     log(`  ✓ ${label}: 왕복 ${got.roundtrips.length}건, 편도 ${got.oneways.length}건${got.checked ? '' : ' (페이지 글과 대조하지 못함)'}`);
+    const d = got.diag;
+    if (d) {
+      const drops = Object.keys(d.drops).map(k => `${k} ${d.drops[k]}`).join(', ');
+      log(`      받은 줄 왕복 ${d.got[0]}, 편도 ${d.got[1]}${drops ? '. 버림: ' + drops : ''}. 글 ${d.chars}자, 끝 ${d.stop}${d.cut ? ', 답이 잘려서 끝난 줄까지만 씀' : ''}`);
+      for (const x of d.samples) log(`      버린 예 ${x}`);
+      for (const x of d.snippets) log(`      페이지 글 ${x}`);
+    }
   }
   legCache.set(key, out);
   return out;
