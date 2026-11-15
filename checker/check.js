@@ -47,17 +47,20 @@ function sourcesFor(from, to, cfg, oneWays) {
 }
 
 /* ===================== Claude API ===================== */
-const usage = {calls: 0, input_tokens: 0, output_tokens: 0, fetches: 0};
+const usage = {calls: 0, input_tokens: 0, output_tokens: 0, thinking_tokens: 0, fetches: 0};
 function addUsage(u) {
   if (!u) return;
   usage.calls++;
   usage.input_tokens += (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0);
   usage.output_tokens += u.output_tokens || 0;
+  usage.thinking_tokens += (u.output_tokens_details && u.output_tokens_details.thinking_tokens) || 0;
   usage.fetches += (u.server_tool_use && u.server_tool_use.web_fetch_requests) || 0;
 }
 let beta = process.env.ANTHROPIC_BETA || '';
+let noEffort = false;
 async function callClaude(body) {
   for (let attempt = 0; ; attempt++) {
+    if (noEffort) delete body.output_config;
     const headers = {'x-api-key': KEY, 'anthropic-version': process.env.ANTHROPIC_VERSION || '2026-10-21', 'content-type': 'application/json'};
     if (process.env.ANTHROPIC_WORKSPACE_ID) headers['anthropic-workspace-id'] = process.env.ANTHROPIC_WORKSPACE_ID;
     if (beta) headers['anthropic-beta'] = beta;
@@ -78,6 +81,7 @@ async function callClaude(body) {
       continue;
     }
     if (res.status === 400 && !beta && /beta/i.test(msg) && /web[_-]?fetch/i.test(msg)) { beta = 'web-fetch-2025-09-10'; continue; }   // the tool asked for its beta header
+    if (res.status === 400 && !noEffort && body.output_config && /effort|output_config/i.test(msg)) { noEffort = true; continue; }   // a model that takes no effort setting
     const err = new Error(`Claude API ${res.status}: ${msg}`);
     // a wrong key, no access, an unknown model or no credit left will fail the same way for every page
     err.fatal = [401, 403, 404].includes(res.status) || (res.status === 400 && /credit|billing|balance|workspace/i.test(msg));
@@ -166,7 +170,10 @@ async function readSource(src, leg, cfg) {
   const host = new URL(src.url).hostname;
   const body = {
     model: cfg.model || 'claude-haiku-5-5',
-    max_tokens: 7000,
+    // this model thinks before it answers, and the thinking counts toward max_tokens:
+    // ask for little of it and leave room, or a long page ends with no answer at all
+    max_tokens: 24000,
+    output_config: {effort: cfg.effort || 'low'},
     system: SYSTEM,
     tools: [{type: 'web_fetch_20250910', name: 'web_fetch', max_uses: 1, max_content_tokens: src.maxContentTokens || Number(cfg.maxContentTokens) || 40000, allowed_domains: [host]}],
     messages: [{role: 'user', content: promptFor(src, leg)}]
@@ -480,7 +487,7 @@ async function main() {
   writeJson('status.json', status);
   log(`\n${status.summary}`);
   if (errors.length) log('읽지 못한 곳:\n- ' + errors.join('\n- '));
-  log(`API 사용: 요청 ${usage.calls}번, 입력 ${usage.input_tokens.toLocaleString('en-US')} 토큰, 출력 ${usage.output_tokens.toLocaleString('en-US')} 토큰`);
+  log(`API 사용: 요청 ${usage.calls}번, 입력 ${usage.input_tokens.toLocaleString('en-US')} 토큰, 출력 ${usage.output_tokens.toLocaleString('en-US')} 토큰${usage.thinking_tokens ? ` (그중 생각 ${usage.thinking_tokens.toLocaleString('en-US')})` : ''}`);
   if (fatal || (routes.length && !updated)) process.exitCode = 1;   // a failed run shows up in the Actions list and GitHub mails the owner
 }
 main().catch(e => { console.error(e.fatal ? e.message : e); process.exitCode = 1; });

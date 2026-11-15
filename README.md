@@ -52,7 +52,7 @@ GitHub 알림을 끄려면 `data/config.json`의 `notify.githubIssue`를 `false`
 | `nights`, `viaNights` | 도착지와 거쳐 가는 곳에서 머물 밤 수 |
 | `on` | 알림 켜기 |
 
-그 밖의 설정: `model`(기본 `claude-haiku-5-5`), `maxContentTokens`(페이지 하나에서 읽는 양), `fx.jpy100`(환율을 받아 오지 못할 때 쓰는 100엔 값).
+그 밖의 설정: `model`(기본 `claude-haiku-5-5`), `effort`(답하기 전에 생각하는 정도. 기본 `low`), `maxContentTokens`(페이지 하나에서 읽는 양), `fx.jpy100`(환율을 받아 오지 못할 때 쓰는 100엔 값).
 
 ## 비용
 
