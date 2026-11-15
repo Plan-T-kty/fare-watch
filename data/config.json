@@ -55,6 +55,23 @@
       "on": true,
       "order": 3,
       "createdAt": "2026-11-15T12:55:00Z"
+    },
+    {
+      "id": "sel-kix-rt",
+      "from": "SEL",
+      "via": "",
+      "to": "KIX",
+      "trip": "rt",
+      "back": true,
+      "target": 250000,
+      "targetHol": 0,
+      "winFrom": "",
+      "winTo": "",
+      "nights": 10,
+      "viaNights": 2,
+      "on": true,
+      "order": 4,
+      "createdAt": "2026-11-15T15:37:19.947Z"
     }
   ]
 }
