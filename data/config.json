@@ -1,0 +1,60 @@
+{
+  "scheduleText": "매일 오전 10시 49분쯤",
+  "model": "claude-haiku-5-5",
+  "maxContentTokens": 40000,
+  "fx": {
+    "jpy100": 833,
+    "auto": true
+  },
+  "notify": {
+    "githubIssue": true,
+    "mention": true
+  },
+  "routes": [
+    {
+      "id": "sel-fuk-rt",
+      "from": "SEL",
+      "to": "FUK",
+      "trip": "rt",
+      "target": 200000,
+      "targetHol": 0,
+      "winFrom": "",
+      "winTo": "",
+      "nights": 3,
+      "on": true,
+      "order": 1,
+      "createdAt": "2026-11-15T12:19:00Z"
+    },
+    {
+      "id": "sel-oka-rt",
+      "from": "SEL",
+      "to": "OKA",
+      "trip": "rt",
+      "target": 220000,
+      "targetHol": 290000,
+      "winFrom": "",
+      "winTo": "",
+      "nights": 4,
+      "on": true,
+      "order": 2,
+      "createdAt": "2026-11-15T12:19:01Z"
+    },
+    {
+      "id": "icn-fuk-oka-chain",
+      "from": "ICN",
+      "via": "FUK",
+      "to": "OKA",
+      "trip": "chain",
+      "back": true,
+      "target": 260000,
+      "targetHol": 270000,
+      "winFrom": "",
+      "winTo": "",
+      "nights": 3,
+      "viaNights": 2,
+      "on": true,
+      "order": 3,
+      "createdAt": "2026-11-15T12:55:00Z"
+    }
+  ]
+}

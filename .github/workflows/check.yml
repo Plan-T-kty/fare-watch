@@ -1,0 +1,77 @@
+name: 가격 확인
+
+on:
+  schedule:
+    - cron: '49 1 * * *'   # 매일 10:49 (한국 시간). GitHub 시계는 UTC라서 9시간 뺀 값이에요.
+  workflow_dispatch:        # Actions 탭이나 앱의 "지금 가격 확인"으로 바로 돌릴 수 있어요.
+  push:
+    branches: [main]        # 노선이나 파일을 고치면 가격 확인 없이 화면만 다시 올려요.
+
+permissions:
+  contents: write           # 확인한 값을 data/ 에 저장
+  issues: write             # 목표가에 닿으면 "최저가 알림" 이슈에 글을 남김
+  pages: write              # 앱 화면 올리기
+  id-token: write           # 앱 화면 올리기
+
+concurrency:
+  group: fare-watch
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        if: github.event_name != 'push'
+        with:
+          node-version: 22
+
+      - name: 가격 확인
+        if: github.event_name != 'push'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node checker/check.js
+
+      - name: 결과 저장
+        if: always() && github.event_name != 'push'
+        run: |
+          git config user.name "fare-watch"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/prices.json data/status.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "가격 확인 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+          git pull --rebase
+          git push
+
+      # 이 작업이 저장한 커밋은 화면을 자동으로 다시 올려 주지 않아서, 여기서 직접 올려요.
+      - name: 화면 올릴 준비
+        id: pages
+        if: always()
+        continue-on-error: true
+        uses: actions/configure-pages@v5
+
+      - name: 화면 묶기
+        if: always() && steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: '.'
+
+      - name: 화면 올리기
+        id: deployment
+        if: always() && steps.pages.outcome == 'success'
+        uses: actions/deploy-pages@v4
+
+      - name: 화면이 꺼져 있을 때
+        if: always() && steps.pages.outcome != 'success'
+        run: echo "::warning::앱 화면이 아직 꺼져 있어요. 저장소 Settings → Pages → Source를 GitHub Actions로 바꾼 뒤 다시 실행해 주세요."

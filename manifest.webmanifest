@@ -1,0 +1,16 @@
+{
+  "name": "항공·페리 최저가 알리미",
+  "short_name": "최저가 알리미",
+  "description": "후쿠오카·오키나와 항공권과 페리 값을 날마다 확인하고 목표가에 닿으면 알려 줘요.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFCE1F",
+  "theme_color": "#FFCE1F",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>항공·페리 최저가 알리미</title>
+<meta name="theme-color" content="#FFCE1F">
+<script src="mode.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&amp;family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: an airport overhead sign across the top, then one left-aligned column of
+     luggage-tag cards. The three-letter destination code is the only loud element. */
+  --floor:#E6EAEF;   /* concourse floor: the page */
+  --tag:#FFFFFF;     /* tag paper: cards */
+  --wash:#EEF2F7;    /* quiet fill inside a tag */
+  --ink:#10213F;     /* print navy: text, primary buttons */
+  --soft:#55637D;    /* secondary text, trend line */
+  --rule:#C8D1DD;    /* hairlines, perforations */
+  --sign:#FFCE1F;    /* wayfinding yellow: the sign band, the active tab */
+  --sign-ink:#10213F;
+  --bar:#10213F; --bar-ink:#FFFFFF;
+  --focus:#1D5BFF;
+  --go:#08703F;   --go-bg:#DAF2E5;
+  --hold:#8A5200; --hold-bg:#FFEFC7;
+  --stop:#B02A25; --stop-bg:#FBE0DD;
+  --shade:rgba(8,14,28,.55);
+  --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",Arial,sans-serif;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --floor:#0A1220; --tag:#141F37; --wash:#1B2946; --ink:#E9EEF8; --soft:#9DABC4; --rule:#33456C;
+    --sign:#FFCE1F; --sign-ink:#10213F; --bar:#050A14; --bar-ink:#E9EEF8; --focus:#9DB9FF;
+    --go:#45D694; --go-bg:#0F3A2B; --hold:#F5BD52; --hold-bg:#3F2F0D; --stop:#FF8A7E; --stop-bg:#47191B;
+    --shade:rgba(0,0,0,.65);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --floor:#0A1220; --tag:#141F37; --wash:#1B2946; --ink:#E9EEF8; --soft:#9DABC4; --rule:#33456C;
+  --sign:#FFCE1F; --sign-ink:#10213F; --bar:#050A14; --bar-ink:#E9EEF8; --focus:#9DB9FF;
+  --go:#45D694; --go-bg:#0F3A2B; --hold:#F5BD52; --hold-bg:#3F2F0D; --stop:#FF8A7E; --stop-bg:#47191B;
+  --shade:rgba(0,0,0,.65);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--floor);color:var(--ink);font:400 15px/1.55 var(--body)}
+h1,h2,h3,h4,p,figure,dl,dd,ul{margin:0}
+ul{padding:0;list-style:none}
+h2{font-size:18px;font-weight:700;letter-spacing:-.01em;text-wrap:balance;line-height:1.35}
+h3{font-size:15px;font-weight:700}
+h4{font-size:14px;font-weight:700}
+a{color:inherit}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* sign band */
+.sign{background:var(--sign);color:var(--sign-ink)}
+.sign-in{max-width:720px;margin:0 auto;padding:16px 16px 14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+.brand{display:flex;align-items:center;gap:10px}
+.pict{display:flex;gap:4px}
+.pict span{width:30px;height:30px;border-radius:5px;background:var(--sign-ink);color:var(--sign);display:grid;place-items:center}
+.pict svg{width:20px;height:20px}
+.sign h1{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.25}
+.sign .last{font-size:13px;font-weight:500}
+
+/* tabs */
+.tabs{position:sticky;top:0;z-index:5;background:var(--bar)}
+.tabs-in{max-width:720px;margin:0 auto;display:flex;padding:0 8px}
+.tabs a{flex:1;text-align:center;padding:12px 6px 9px;color:var(--bar-ink);text-decoration:none;font-weight:600;border-bottom:3px solid transparent}
+.tabs a[aria-current="page"]{color:var(--sign);border-bottom-color:var(--sign)}
+.tabs a:focus-visible{outline-offset:-4px}
+
+main{max-width:720px;margin:0 auto;padding:16px 16px 72px}
+.view{display:flex;flex-direction:column;gap:14px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.note{font-size:13.5px;color:var(--soft)}
+.banner{background:var(--hold-bg);color:var(--hold);padding:10px 14px;border-radius:8px;font-size:14px;font-weight:500}
+.lede{font-size:15px;max-width:62ch}
+
+/* buttons, chips */
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:7px 14px;border-radius:8px;border:1.5px solid var(--ink);background:none;color:var(--ink);font:600 14px/1.3 var(--body);text-decoration:none;cursor:pointer;text-align:center}
+.btn.solid{background:var(--ink);color:var(--tag)}
+.btn.line{border-color:var(--rule)}
+.btn.small{min-height:36px;padding:5px 11px;font-size:13.5px}
+.btn.wide{width:100%;min-height:48px;font-size:15px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;font-size:13px;font-weight:600;line-height:1.5}
+.chip::before{content:"";width:8px;height:8px;flex:none}
+.chip.go{background:var(--go-bg);color:var(--go)}
+.chip.go::before{border-radius:50%;background:currentColor}
+.chip.hold{background:var(--hold-bg);color:var(--hold)}
+.chip.hold::before{background:currentColor;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.chip.stop{background:var(--stop-bg);color:var(--stop)}
+.chip.stop::before{background:currentColor;clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%)}
+.chip.plain{background:var(--wash);color:var(--soft)}
+.chip.plain::before{border-radius:50%;box-shadow:inset 0 0 0 2px currentColor}
+.fb.hol .chip.plain{background:var(--tag)}
+
+/* luggage tag */
+.tag{--cut:14px;background:var(--tag);clip-path:polygon(var(--cut) 0,100% 0,100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)),0 var(--cut));display:flex;flex-direction:column}
+.strip{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 20px;border-bottom:1.5px dashed var(--rule)}
+.hole{flex:none;width:14px;height:14px;border-radius:50%;background:var(--floor);box-shadow:inset 0 0 0 2.5px var(--rule)}
+.strip h3{flex:1;min-width:0}
+.strip h3 span{font-weight:400;color:var(--soft);font-size:13.5px;margin-left:6px}
+.sw{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:6px 4px;cursor:pointer;font-size:13px;font-weight:600;color:var(--soft)}
+.sw i{width:34px;height:20px;border-radius:999px;background:var(--rule);position:relative;flex:none;transition:background .15s}
+.sw i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--tag);transition:transform .15s}
+.sw[aria-checked="true"]{color:var(--ink)}
+.sw[aria-checked="true"] i{background:var(--go)}
+.sw[aria-checked="true"] i::after{transform:translateX(14px)}
+
+.lead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px;padding:16px 20px 14px}
+.code{font:800 clamp(72px,23vw,108px)/.8 var(--display);margin-left:-3px;letter-spacing:-.005em}
+
+.fb{--bg:var(--tag);border-top:1.5px dashed var(--rule);padding:12px 20px 14px;display:flex;flex-direction:column;gap:8px}
+.fb.hol{--bg:var(--wash);background:var(--wash)}
+.fb.hit{box-shadow:inset 6px 0 0 var(--go)}
+.fb-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:6px 10px}
+.goal{font-size:13px;color:var(--soft)}
+.fb-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px}
+.won{font-size:30px;font-weight:700;line-height:1.15;letter-spacing:-.02em;white-space:nowrap}
+.won small{font-size:15px;font-weight:600;margin-left:2px;letter-spacing:0}
+.who{font-size:13.5px;color:var(--soft);line-height:1.45}
+.why{font-size:13.5px}
+.none{font-size:14px;color:var(--soft)}
+
+/* trend sparkline */
+.trend{display:flex;flex-direction:column;gap:3px}
+.plot{position:relative;height:44px;touch-action:pan-y;cursor:crosshair}
+.plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;color:var(--soft)}
+.plot .area{fill:currentColor;opacity:.1}
+.plot .ln{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.plot .tl{position:absolute;left:0;right:0;height:1px;background:var(--rule)}
+.plot .tl span{position:absolute;left:0;bottom:1px;font-size:11px;line-height:1.2;color:var(--soft);background:var(--bg);padding-right:4px}
+.plot .dot{position:absolute;right:-4px;width:8px;height:8px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 2px var(--bg)}
+.plot .xh{position:absolute;top:0;bottom:0;width:1px;background:var(--ink)}
+.cap{font-size:12.5px;color:var(--soft)}
+
+.more{padding:0 20px;border-top:1.5px dashed var(--rule)}
+.more summary{cursor:pointer;font-size:14px;font-weight:600;padding:11px 0;list-style:none;display:flex;align-items:center;gap:8px}
+.more summary::-webkit-details-marker{display:none}
+.more summary::before{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s;flex:none;margin:0 3px 0 1px}
+.more[open] summary::before{transform:rotate(45deg)}
+.more .in{padding:0 0 14px;display:flex;flex-direction:column;gap:4px}
+.deal{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:8px 0;border-top:1px solid var(--rule);align-items:baseline;font-size:14px}
+.deal .p{font-weight:700;white-space:nowrap}
+.deal .w{color:var(--soft);font-size:13px}
+.deal .l{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;padding-top:2px}
+.deal .l a{font-weight:600}
+.tagfoot{padding:11px 20px 16px;border-top:1.5px dashed var(--rule);font-size:12.5px;color:var(--soft)}
+
+.fb.off h4{color:var(--soft);font-weight:600}
+/* a trip that continues on: one row per flight */
+.legs{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.legs li{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14px;align-items:baseline}
+.legs .lg-r{font-weight:600}
+.legs .lg-p{font-weight:700;white-space:nowrap;justify-self:end}
+.legs .lg-d{color:var(--soft);font-size:13px}
+.legs .lg-l{display:flex;gap:12px;font-size:13px;justify-self:end}
+.legs .lg-l a{font-weight:600}
+.viacode{display:flex;flex-direction:column;font-size:12.5px;color:var(--soft);padding-bottom:3px;margin-right:auto}
+.viacode span{font:700 28px/1 var(--display);color:var(--ink);letter-spacing:.01em}
+.check{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;min-height:44px}
+.check input{width:20px;height:20px;min-height:0;padding:0;flex:none}
+.lab .opt{font-weight:400;color:var(--soft);margin-left:6px}
+
+/* tables */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 10px 7px 0;border-top:1px solid var(--rule);vertical-align:top;font-weight:400}
+thead th{font-weight:600;font-size:13px;color:var(--soft);border-top:0}
+th.r,td.r{text-align:right;padding-right:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.total td{font-weight:700;border-top:2px solid var(--ink)}
+tr.total td.r{font-size:20px}
+
+/* plain sections (routes footer) */
+.how{border-top:2px solid var(--ink);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.say{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.say q{quotes:none;font-weight:600;background:var(--tag);padding:6px 12px;border-radius:8px}
+.plainmore{border-top:1px solid var(--rule)}
+.plainmore summary{cursor:pointer;font-weight:600;font-size:14px;padding:11px 0;list-style:none;display:flex;align-items:center;gap:8px}
+.plainmore summary::-webkit-details-marker{display:none}
+.plainmore summary::before{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s;flex:none;margin:0 3px 0 1px}
+.plainmore[open] summary::before{transform:rotate(45deg)}
+.plainmore .in{padding:0 0 14px;display:flex;flex-direction:column;gap:8px}
+
+/* sites */
+.sheet{background:var(--tag);padding:16px 20px}
+.ctx{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ctx .full{grid-column:1/-1}
+@media (min-width:600px){.ctx{grid-template-columns:1.6fr 1fr 1fr}.ctx .full{grid-column:auto}.ctx .hol{grid-column:1/-1}}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field > label,.field > .lab{font-size:13px;font-weight:600}
+input,select{font:inherit;color:var(--ink);background:var(--tag);border:1.5px solid var(--rule);border-radius:8px;padding:9px 11px;min-height:44px;width:100%;min-width:0}
+input:disabled{background:var(--wash);color:var(--soft)}
+.grp{display:flex;flex-direction:column;gap:2px}
+.grp + .grp{border-top:2px solid var(--ink);padding-top:14px}
+.grp > p{font-size:13.5px;color:var(--soft);max-width:62ch;padding-bottom:6px}
+.site{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;padding:11px 0;border-top:1px solid var(--rule)}
+.site .nm{font-weight:700;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.site .nt{grid-column:1;font-size:13.5px;color:var(--soft)}
+.site .op{grid-column:2;grid-row:1 / span 2}
+.site.out .nm b{font-weight:600}
+.tips li{position:relative;padding:3px 0 3px 16px;font-size:14.5px}
+.tips li::before{content:"";position:absolute;left:2px;top:.8em;width:6px;height:6px;background:var(--ink);border-radius:1px}
+.srcs li{font-size:13.5px;padding:3px 0}
+
+/* ferry */
+.times{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14.5px}
+.times dt{font-weight:700}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.calc .full{grid-column:1/-1}
+@media (min-width:600px){.calc{grid-template-columns:2fr 1fr 1fr 1fr}.calc .full{grid-column:auto}}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vs > div{background:var(--wash);padding:12px 14px;border-radius:8px;display:flex;flex-direction:column;gap:2px}
+.vs .k{font-size:13px;color:var(--soft)}
+.vs .v{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.vs .d{font-size:13px;color:var(--soft)}
+.linklist li{padding:10px 0;border-top:1px solid var(--rule);display:flex;flex-direction:column;gap:6px}
+.linklist li:first-child{border-top:0;padding-top:0}
+
+/* dialog */
+dialog{border:0;padding:0;background:var(--tag);color:var(--ink);width:100%;max-width:560px;max-height:calc(100% - 24px);margin:auto auto 0;border-radius:16px 16px 0 0;overflow:auto}
+@media (min-width:640px){dialog{margin:auto;border-radius:14px}}
+dialog::backdrop{background:var(--shade)}
+.dl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px 6px;position:sticky;top:0;background:var(--tag);z-index:1}
+.dl-body{padding:8px 20px 18px;display:flex;flex-direction:column;gap:14px}
+.dl-foot{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;padding:12px 20px 20px;border-top:1px solid var(--rule)}
+.x{border:0;background:none;width:40px;height:40px;border-radius:8px;cursor:pointer;font-size:24px;line-height:1}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--rule);border-radius:8px;overflow:hidden}
+.seg input{position:absolute;opacity:0;width:1px;height:1px;min-height:0;padding:0;border:0}
+.seg span{display:block;text-align:center;padding:10px;font-weight:600;cursor:pointer}
+.seg input:checked + span{background:var(--ink);color:var(--tag)}
+.seg input:focus-visible + span{outline:3px solid var(--focus);outline-offset:-3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts{display:flex;flex-direction:column;border:1.5px solid var(--rule);border-radius:8px;overflow:auto;max-height:230px}
+.opts button{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border:0;border-top:1px solid var(--rule);background:none;text-align:left;cursor:pointer;min-height:44px;align-items:center}
+.opts button:first-child{border-top:0}
+.opts button:hover{background:var(--wash)}
+.opts .c,.picked .c{font:700 18px/1 var(--display);letter-spacing:.03em}
+.opts .cc{color:var(--soft);font-size:13px;margin-left:6px}
+.picked{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1.5px solid var(--ink);border-radius:8px;padding:5px 6px 5px 12px;min-height:46px}
+.picked .cc{color:var(--soft);font-size:13px}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{border:1.5px solid var(--rule);background:none;border-radius:999px;padding:5px 12px;font-size:13.5px;cursor:pointer;min-height:36px}
+.pk{display:flex;flex-direction:column;gap:8px}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--tag);padding:10px 16px;border-radius:8px;font-size:14px;font-weight:500;max-width:calc(100% - 32px);z-index:20;text-align:center}
+@media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+
+<header class="sign">
+  <div class="sign-in">
+    <div class="brand">
+      <div class="pict" aria-hidden="true">
+        <span><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c.9 0 1.5.9 1.5 2v5l8 4.6v2.2l-8-2.4v4.3l2.3 1.7V21L12 20l-3.8 1v-1.6l2.3-1.7v-4.3l-8 2.4v-2.2l8-4.6V4c0-1.1.6-2 1.5-2z"/></svg></span>
+        <span><svg viewBox="0 0 24 24"><path fill="currentColor" d="M10 3h4v3h3v4.3l-5-1.7-5 1.7V6h3V3zM3 13.4l9-3 9 3-2.3 5.5c-.9.4-1.9.6-2.9.6-1.4 0-2.6-.4-3.8-1.1-1.2.7-2.4 1.1-3.8 1.1-1 0-2-.2-2.9-.6L3 13.4z"/></svg></span>
+      </div>
+      <h1>항공·페리 최저가 알리미</h1>
+    </div>
+    <p class="last" id="last-check">가격 기록을 불러오는 중이에요</p>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="화면 이동">
+  <div class="tabs-in">
+    <a href="#routes" data-tab="routes">내 노선</a>
+    <a href="#sites" data-tab="sites">사이트</a>
+    <a href="#ferry" data-tab="ferry">페리</a>
+  </div>
+</nav>
+
+<main>
+  <!-- 내 노선 -->
+  <section class="view" id="view-routes">
+    <h2 class="sr">내 노선</h2>
+    <div id="routes-notice"></div>
+    <div class="stack" id="routes-list"></div>
+    <button type="button" class="btn solid wide" data-act="add">노선 추가</button>
+    <section class="how" aria-labelledby="how-h">
+      <h2 id="how-h">알림은 이렇게 와요</h2>
+      <p class="lede" id="how-auto"></p>
+      <p class="note" id="run-line"></p>
+      <div class="stack" id="ask-now" style="gap:8px">
+        <p class="note">지금 바로 확인하고 싶으면 Claude 대화창에 이렇게 보내세요.</p>
+        <div class="say"><q id="ask-text">항공권 가격 지금 확인해줘</q><button type="button" class="btn line small" data-act="copy-ask">문구 복사</button></div>
+      </div>
+      <details class="plainmore" id="repo-set" hidden>
+        <summary>이 기기에서 노선 바꾸기</summary>
+        <div class="in">
+          <p class="note">노선과 목표가는 GitHub 저장소에 들어 있어요. 이 저장소의 Contents 쓰기 권한만 가진 토큰을 넣으면 이 화면에서 바로 고칠 수 있어요. 토큰은 이 기기에만 저장돼요.</p>
+          <p class="note" id="token-state"></p>
+          <div class="field"><label for="token-input">편집용 토큰</label><input id="token-input" type="password" autocomplete="off" placeholder="github_pat_로 시작해요"></div>
+          <div class="btns"><button type="button" class="btn line small" data-act="save-token">토큰 저장</button><button type="button" class="btn line small" data-act="run-now" id="run-now" hidden>지금 가격 확인</button></div>
+          <p class="note">칸을 비우고 저장하면 토큰이 지워져요. 지금 가격 확인은 토큰에 Actions 쓰기 권한도 있어야 눌려요.</p>
+        </div>
+      </details>
+      <details class="plainmore" id="hol-cal">
+        <summary>일본 공휴일로 치는 날</summary>
+        <div class="in">
+          <p class="note">가는 날부터 오는 날 사이에 아래 날짜가 하루라도 끼면 ‘일본 공휴일 낀 일정’으로 나눠요. 편도는 타는 날만 봐요. 연말연시(12/29~1/3)와 오봉(8/13~16)은 법정 공휴일은 아니지만 일본이 쉬는 철이라 함께 넣었어요.</p>
+          <div class="tw"><table><thead><tr><th>날짜</th><th>이름</th></tr></thead><tbody id="hol-rows"></tbody></table></div>
+        </div>
+      </details>
+    </section>
+  </section>
+
+  <!-- 사이트 -->
+  <section class="view" id="view-sites" hidden>
+    <h2>믿고 쓸 사이트</h2>
+    <p class="lede">가격 비교 사이트에서 찾고, 결제는 항공사 공식이나 아는 여행사에서 하는 편이 안전해요. 취소와 변경은 표를 판 곳에서만 처리되기 때문이에요.</p>
+    <div class="sheet stack">
+      <div class="ctx">
+        <div class="field full"><label for="ctx-route">어느 노선으로 열까요</label><select id="ctx-route"></select></div>
+        <div class="field"><label for="ctx-dep">가는 날</label><input type="date" id="ctx-dep"></div>
+        <div class="field"><label for="ctx-ret">오는 날</label><input type="date" id="ctx-ret"></div>
+        <div class="field full hol"><label for="ctx-hol">일본 공휴일 일정으로 날짜 채우기</label><select id="ctx-hol"></select></div>
+      </div>
+      <p class="note" id="ctx-note"></p>
+    </div>
+    <div class="sheet stack" id="site-groups"></div>
+    <div class="stack">
+      <h2>결제 전에 볼 것</h2>
+      <ul class="tips">
+        <li>같은 표가 항공사 공식 사이트에 있으면 공식에서 결제하세요. 값 차이가 몇천 원이면 공식이 낫습니다.</li>
+        <li>처음 보는 판매처가 맨 위 최저가로 뜨면 건너뛰세요.</li>
+        <li>취소·변경 수수료와 위탁 수하물 포함 여부를 결제 화면에서 확인하세요. 특가는 수하물이 빠진 경우가 많아요.</li>
+        <li>주소창의 도메인이 이 목록의 주소와 같은지 확인하세요.</li>
+      </ul>
+      <h2>이렇게 판단했어요</h2>
+      <ul class="srcs">
+        <li><a href="https://www.sidae.com/article/2022120908325071224">한국소비자원의 글로벌 예약 사이트 8곳 거래조건 조사 (2022년 12월 보도)</a></li>
+        <li><a href="https://view.nate.com/travel/view/46597/">한국소비자원의 키위닷컴 상담 급증 주의 당부</a></li>
+        <li><a href="https://news.tf.co.kr/read/ogmeta/1756470.htm">고투게이트 연락 두절에 대한 한국소비자원 지적</a></li>
+        <li><a href="https://www.etoday.co.kr/news/view/2448975">진에어·에어부산·에어프레미아의 해외 예약 사이트 주의 공지 (2025년 3월 보도)</a></li>
+        <li><a href="https://biz.sbs.co.kr/amp/article/20000226690">아고다·트립닷컴 상담 급증 집계 (2025년 4월 보도)</a></li>
+        <li><a href="https://www.sidae.com/article/2026091416260875843">한국소비자원·공정위 항공서비스 피해주의보 (2026년 9월)</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 페리 -->
+  <section class="view" id="view-ferry" hidden>
+    <h2>배로 가는 길</h2>
+    <div class="sheet stack">
+      <div>
+        <h3>부산 ↔ 후쿠오카 하카타항</h3>
+        <p class="note">뉴카멜리아호, 고려훼리. 부산에서 후쿠오카로 가는 배는 지금 이 한 척이에요.</p>
+      </div>
+      <dl class="times">
+        <dt>부산 → 하카타</dt><dd>22:30 출항, 다음 날 07:30 도착. 발권 마감 19:00</dd>
+        <dt>하카타 → 부산</dt><dd>12:30 출항, 18:30 도착. 발권 마감 11:30</dd>
+      </dl>
+      <p class="note">시간과 휴항일은 바뀔 수 있어요. 예약 전에 운항 일정을 확인하세요.</p>
+      <div class="calc">
+        <div class="field full"><label for="fy-class">객실</label><select id="fy-class"></select></div>
+        <div class="field"><label for="fy-trip">표 종류</label><select id="fy-trip"><option value="rt">왕복</option><option value="ow">편도, 부산 출발</option></select></div>
+        <div class="field"><label for="fy-pax">어른 수</label><input id="fy-pax" type="number" inputmode="numeric" min="1" max="9" step="1" value="1"></div>
+        <div class="field"><label for="fy-rate">100엔 환율 (원)</label><input id="fy-rate" type="number" inputmode="decimal" min="500" max="1500" step="1" value="833"></div>
+      </div>
+      <div class="tw"><table>
+        <tbody id="fy-rows"></tbody>
+      </table></div>
+      <details class="plainmore">
+        <summary>부대비용 직접 고치기</summary>
+        <div class="in">
+          <p class="note">유류할증료가 분기마다 바뀌어요. 아래 값은 2026년 10~12월 기준이에요. 부산 출발은 터미널 이용료 6,000원, 출국납부금 1,000원, 유류할증료 14,000원이고, 하카타 출발은 터미널 이용료 500엔, 국제관광여객세 3,000엔, 유류할증료 1,400엔이에요.</p>
+          <div class="two">
+            <div class="field"><label for="fy-fee-kr">부산 출발 합계 (원)</label><input id="fy-fee-kr" type="number" inputmode="numeric" min="0" step="100" value="21000"></div>
+            <div class="field"><label for="fy-fee-jp">하카타 출발 합계 (엔)</label><input id="fy-fee-jp" type="number" inputmode="numeric" min="0" step="100" value="4900"></div>
+          </div>
+        </div>
+      </details>
+      <div class="vs" id="fy-vs"></div>
+      <ul class="tips">
+        <li>위 운임은 2026년 10월 1일부터 적용된 정가예요. 왕복 할인과 학생 할인은 2026년 9월 30일에 없어졌어요.</li>
+        <li>홈페이지와 여행사 예약은 정가보다 싼 할인 운임이 따로 있어요. 실제 가격은 예약 화면에서 확인하세요.</li>
+        <li>홈페이지 할인 표를 취소하면 결제 24시간 안은 무료, 출발 4일 전까지 10,000원, 3일 전부터 전날까지 20,000원이고 당일은 환불되지 않아요. 특가 표는 24시간이 지나면 환불되지 않아요.</li>
+        <li>환율 833원은 2026년 11월 14일 고시 기준이에요.</li>
+      </ul>
+      <div class="btns">
+        <a class="btn solid" href="https://www.koreaferry.co.kr/rs/idv/reservation">고려훼리 예약</a>
+        <a class="btn line" href="https://www.koreaferry.kr/bbs/content.php?co_id=userguide&amp;device=pc">운임 안내</a>
+        <a class="btn line" href="https://www.koreaferry.kr/bbs/board.php?bo_table=ferry_notice&amp;wr_id=39">유류할증료 공지</a>
+        <a class="btn line" href="https://www.koreaferry.kr/bbs/board.php?bo_table=schedule01">운항 일정</a>
+      </div>
+    </div>
+
+    <div class="sheet stack">
+      <h3>후쿠오카에서 오키나와로 넘어가기</h3>
+      <p>인천에서 후쿠오카로 들어간 뒤 오키나와로 넘어가는 길은 두 가지예요. 비행기 값은 내 노선에 이어 가는 여정으로 넣어 두면 함께 확인해요.</p>
+      <dl class="times">
+        <dt>비행기</dt><dd>후쿠오카 → 나하 약 1시간 55분. 일본항공, 전일본공수, 피치, 스카이마크, 솔라시드에어가 다니고 일본 예약 사이트에는 편도 5천 엔대부터 보여요.</dd>
+        <dt>배</dt><dd>한국이나 후쿠오카에서 오키나와로 바로 가는 여객선은 없어요. 가고시마까지 내려가 페리를 타요. 가고시마 18:00 출항, 나하 다음 날 19:00 도착. 돌아올 때는 나하 07:00 출항, 가고시마 다음 날 08:30 도착.</dd>
+      </dl>
+      <ul class="tips">
+        <li>윌러 트래블에서 이 페리를 한국어로 예약할 수 있어요. 출발 한 달 전부터 3일 전 23:59까지 받고, 승선권을 따로 바꾸지 않고 메일 화면을 보여 주면 타요.</li>
+        <li>마루에이페리와 마릭스라인이 번갈아 하루 한 편 다녀요. 아마미 섬들을 거쳐 가요.</li>
+        <li>2026년 11월 1일 승선분부터 7일 전까지 인터넷으로 예약하면 가고시마 발착 2등 운임이 15% 할인돼요.</li>
+        <li>후쿠오카에서 가고시마까지는 규슈 신칸센으로 1시간 20분에서 1시간 40분쯤 걸려요.</li>
+      </ul>
+      <div class="btns">
+        <button type="button" class="btn solid" data-act="add-preset" data-from="ICN" data-via="FUK" data-to="OKA">인천→후쿠오카→오키나와 여정 추가</button>
+        <a class="btn line" href="https://willer-travel.com/ko/ferry/">윌러 트래블 페리 예약</a>
+        <a class="btn line" href="https://willer-travel.com/ko/ferry/carrier/89.html">윌러의 마루에이페리 안내</a>
+        <a class="btn line" href="https://www.aline-ferry.com/kagoshima/fare/passenger/">마루에이페리 운임표</a>
+        <a class="btn line" href="https://www.aline-ferry.com/kagoshima/time">시간표</a>
+        <a class="btn line" href="https://ferry.smaku.app/">마루에이페리 예약</a>
+      </div>
+    </div>
+    </div>
+
+    <div class="sheet stack">
+      <h3>부산에서 떠나는 다른 일본행 배</h3>
+      <ul class="linklist">
+        <li><span><b>시모노세키</b> 부관훼리. 저녁에 떠나 다음 날 아침에 닿아요. 시모노세키에서 하카타까지는 열차로 1시간 안팎이에요.</span>
+          <div class="btns"><a class="btn line small" href="https://www.pukwan.co.kr/">부관훼리</a></div></li>
+        <li><span><b>대마도</b> 팬스타 쓰시마링크, 스타라인 노바, 대아고속해운 씨플라워가 다녀요. 히타카츠까지 1시간 반쯤 걸려요.</span>
+          <div class="btns"><a class="btn line small" href="https://www.panstar.co.kr/business/cruise/tsushima_link">팬스타 쓰시마링크</a></div></li>
+        <li><span><b>오사카</b> 팬스타 크루즈 페리가 세토내해를 지나가요.</span>
+          <div class="btns"><a class="btn line small" href="https://www.panstar.co.kr/business/cruise/busan_osaka">팬스타 부산–오사카</a><a class="btn line small" href="https://www.panstarcruise.com/?lang=ko">팬스타 예약</a></div></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<dialog id="sheet" aria-labelledby="sheet-title">
+  <form id="route-form" novalidate>
+    <div class="dl-head"><h2 id="sheet-title">노선 추가</h2><button type="button" class="x" data-act="close-sheet" aria-label="닫기">×</button></div>
+    <div class="dl-body">
+      <div class="field"><span class="lab" id="lab-from">출발</span><div class="pk" id="pick-from"></div></div>
+      <div class="field"><span class="lab" id="lab-via">거쳐 가는 곳<span class="opt">없으면 비워 두세요</span></span><div class="pk" id="pick-via"></div></div>
+      <div class="field"><span class="lab" id="lab-to">도착</span><div class="pk" id="pick-to"></div></div>
+      <label class="check" id="f-back-wrap" hidden><input type="checkbox" id="f-back" checked>출발지로 돌아오는 비행기도 넣기</label>
+      <div class="field" id="f-trip-wrap"><span class="lab" id="lab-trip">표 종류</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lab-trip">
+          <label><input type="radio" name="trip" id="f-trip-rt" value="rt" checked><span>왕복</span></label>
+          <label><input type="radio" name="trip" id="f-trip-ow" value="ow"><span>편도</span></label>
+        </div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="f-target">목표가, 공휴일 아닌 일정 (원)</label><input id="f-target" type="number" inputmode="numeric" min="0" step="1000" placeholder="예: 200000"></div>
+        <div class="field"><label for="f-target-hol">목표가, 일본 공휴일 낀 일정 (원)</label><input id="f-target-hol" type="number" inputmode="numeric" min="0" step="1000" placeholder="예: 250000"></div>
+      </div>
+      <p class="note" id="f-target-hint">1인 총액 기준이에요. 한쪽을 비워 두면 그 종류는 알리지 않아요.</p>
+      <div class="two">
+        <div class="field"><label for="f-win-from">이날부터 출발</label><input id="f-win-from" type="date"></div>
+        <div class="field"><label for="f-win-to">이날까지 출발</label><input id="f-win-to" type="date"></div>
+      </div>
+      <p class="note">여행 시기를 비워 두면 날짜에 상관없이 가장 싼 표를 찾아요.</p>
+      <div id="f-nights-row" class="stack" style="gap:6px">
+        <div class="two">
+          <div class="field" id="f-via-nights-wrap" hidden><label for="f-via-nights">거쳐 가는 곳에서 몇 밤</label><input id="f-via-nights" type="number" inputmode="numeric" min="1" max="30" step="1" value="2"></div>
+          <div class="field" id="f-stay-wrap"><label for="f-nights">도착지에서 몇 밤</label><input id="f-nights" type="number" inputmode="numeric" min="0" max="30" step="1" value="3"></div>
+        </div>
+        <p class="note">이 길이에 가까운 일정을 먼저 찾고, 찾은 표가 없을 때 사이트 링크의 날짜를 정하는 데 써요.</p>
+      </div>
+      <p class="banner" id="f-error" role="alert" hidden></p>
+    </div>
+    <div class="dl-foot">
+      <button type="button" class="btn line" id="f-del">이 노선 지우기</button>
+      <div class="btns"><button type="button" class="btn line" data-act="close-sheet">취소</button><button type="submit" class="btn solid" id="f-save">노선 추가</button></div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
