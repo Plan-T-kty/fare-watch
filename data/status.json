@@ -1,28 +1,31 @@
 {
- "lastRunAt": "2026-11-18T09:16:14.856Z",
+ "lastRunAt": "2026-11-19T09:32:02.994Z",
  "schedule": "매일 오전 10시 49분쯤",
  "model": "claude-haiku-5-5",
  "fx": {
-  "jpy100": 838.34,
+  "jpy100": 835.92,
   "from": "open.er-api.com"
  },
- "summary": "노선 4개를 확인했어요. 목표가 이하인 표가 1건 있어요, 이미 알린 표예요.",
+ "notified": [
+  "GitHub"
+ ],
+ "summary": "노선 4개를 확인했어요. 목표가 이하인 표가 1건 있어요.",
  "hits": [
   {
    "id": "sel-kix-rt",
    "kind": "n",
-   "price": 216242,
+   "price": 224398,
    "target": 250000,
-   "dep": "2026-12-22",
-   "ret": "2026-12-23"
+   "dep": "2026-12-02",
+   "ret": "2026-12-10"
   }
  ],
  "errors": [],
  "usage": {
   "calls": 14,
-  "input_tokens": 406228,
-  "output_tokens": 62783,
-  "thinking_tokens": 47972,
+  "input_tokens": 405984,
+  "output_tokens": 59270,
+  "thinking_tokens": 43641,
   "fetches": 14
  }
 }
