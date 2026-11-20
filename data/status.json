@@ -1,15 +1,12 @@
 {
- "lastRunAt": "2026-11-19T09:32:02.994Z",
+ "lastRunAt": "2026-11-20T09:14:16.686Z",
  "schedule": "매일 오전 10시 49분쯤",
  "model": "claude-haiku-5-5",
  "fx": {
-  "jpy100": 835.92,
+  "jpy100": 832.93,
   "from": "open.er-api.com"
  },
- "notified": [
-  "GitHub"
- ],
- "summary": "노선 4개를 확인했어요. 목표가 이하인 표가 1건 있어요.",
+ "summary": "노선 4개를 확인했어요. 목표가 이하인 표가 1건 있어요, 이미 알린 표예요.",
  "hits": [
   {
    "id": "sel-kix-rt",
@@ -23,9 +20,9 @@
  "errors": [],
  "usage": {
   "calls": 14,
-  "input_tokens": 405984,
-  "output_tokens": 59270,
-  "thinking_tokens": 43641,
+  "input_tokens": 407107,
+  "output_tokens": 70122,
+  "thinking_tokens": 55201,
   "fetches": 14
  }
 }
