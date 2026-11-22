@@ -67,6 +67,11 @@ jobs:
         with:
           path: '.'
 
+      # 방금 올린 묶음이 목록에 잡히기까지 몇 초 걸릴 때가 있어서, 바로 올리면 "묶음이 없다"며 실패해요.
+      - name: 묶음이 등록될 때까지 기다리기
+        if: always() && steps.pages.outcome == 'success'
+        run: sleep 20
+
       - name: 화면 올리기
         id: deployment
         if: always() && steps.pages.outcome == 'success'
