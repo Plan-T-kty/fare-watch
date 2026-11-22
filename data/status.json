@@ -1,6 +1,6 @@
 {
  "lastRunAt": "2026-11-21T08:52:29.729Z",
- "schedule": "매일 오전 10시 49분쯤",
+ "schedule": "하루 한 번, 보통 오후 6시쯤",
  "model": "claude-haiku-5-5",
  "fx": {
   "jpy100": 832.93,

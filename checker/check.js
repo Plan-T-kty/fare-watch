@@ -28,7 +28,7 @@ function writeJson(file, value) {
 
 /* ===================== where fares are read from ===================== */
 const SKY = {SEL: 'sela', TYO: 'tyoa', OSA: 'osaa'};
-const enName = c => String(C.place(c).en || c);
+const enName = c => String(C.place(c).en || c).normalize('NFD').replace(/[\u0300-\u036f]/g, '');   // plain letters for page addresses
 const slug = c => enName(c).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || c.toLowerCase();
 const capSlug = c => enName(c).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || c;
 function sourcesFor(from, to, cfg, oneWays) {

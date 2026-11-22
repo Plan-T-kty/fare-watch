@@ -478,9 +478,27 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('focusout', e => { const fig = e.target.closest && e.target.closest('.trend'); if (fig) clearPoint(fig); });
 
+/* ===================== the full airport list ===================== */
+/* airports.js holds every airport with scheduled flights. It is fetched the first time someone searches,
+   or at once when a watched route uses an airport that has no Korean name here. */
+let airportsWait = null;
+function loadAirports() {
+  if (F.hasAllAirports()) return Promise.resolve(true);
+  if (!airportsWait) airportsWait = new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'airports.js';
+    s.onload = () => { F.setAirports(window.FareAirports); resolve(F.hasAllAirports()); };
+    s.onerror = () => { airportsWait = null; resolve(false); };
+    document.head.appendChild(s);
+  });
+  return airportsWait;
+}
+const namesMissing = () => !F.hasAllAirports() && S.routes.some(r => [r.from, r.via, r.to].some(c => code3(c) && !place(c).iso));
+
 /* ===================== render scheduling ===================== */
 let queued = false;
 function render() {
+  if (namesMissing()) loadAirports().then(ok => { if (ok) render(); });
   if (queued) return;
   queued = true;
   requestAnimationFrame(() => {
@@ -514,7 +532,7 @@ function writeErr(e) {
 /* There the watch list is data/config.json and a daily job writes data/prices.json and data/status.json. */
 const tokenStore = {
   get() { try { return localStorage.getItem('fare-token') || ''; } catch (e) { return ''; } },
-  set(v) { try { if (v) localStorage.setItem('fare-token', v); else localStorage.removeItem('fare-token'); } catch (e) { /* ignore */ } }
+  set(v) { try { if (v) localStorage.setItem('fare-token', v); else localStorage.removeItem('fare-token'); localStorage.removeItem('fare-user'); } catch (e) { /* ignore */ } }
 };
 async function loadJson(path) {
   const r = await fetch(path + '?t=' + Date.now(), {cache: 'no-store'});
@@ -549,6 +567,18 @@ async function repoRunNow() {
     else toast('확인을 시작하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
   } catch (e) { toast('확인을 시작하지 못했어요. 연결을 확인하고 다시 눌러 주세요.'); }
 }
+/* who the token belongs to, for the name on commits made from this page */
+async function whoAmI(token) {
+  try { const v = JSON.parse(localStorage.getItem('fare-user') || 'null'); if (v && v.login && v.id) return v; } catch (e) { /* ask again */ }
+  try {
+    const r = await fetch('https://api.github.com/user', {headers: {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json'}, cache: 'no-store'});
+    const j = r.ok ? await r.json() : null;
+    if (!j || !j.login || !j.id) return null;
+    const v = {login: String(j.login), id: Number(j.id)};
+    try { localStorage.setItem('fare-user', JSON.stringify(v)); } catch (e) { /* not kept, asked again next time */ }
+    return v;
+  } catch (e) { return null; }
+}
 async function repoSave(mutate, message) {
   const repo = repoName();
   const token = tokenStore.get();
@@ -563,7 +593,10 @@ async function repoSave(mutate, message) {
     const cfg = JSON.parse(unb64(meta.content));
     if (!Array.isArray(cfg.routes)) cfg.routes = [];
     mutate(cfg.routes);
-    const put = await fetch(api, {method: 'PUT', headers: Object.assign({'Content-Type': 'application/json'}, h), body: JSON.stringify({message, content: b64(JSON.stringify(cfg, null, 2) + '\n'), sha: meta.sha})});
+    // the commit is signed with GitHub's private address for the account, so the real email never lands in a public repository
+    const me = await whoAmI(token), owner = repo.split('/')[0];
+    const signer = me ? {name: me.login, email: `${me.id}+${me.login}@users.noreply.github.com`} : {name: owner, email: `${owner}@users.noreply.github.com`};
+    const put = await fetch(api, {method: 'PUT', headers: Object.assign({'Content-Type': 'application/json'}, h), body: JSON.stringify({message, content: b64(JSON.stringify(cfg, null, 2) + '\n'), sha: meta.sha, committer: signer, author: signer})});
     if (!put.ok) throw new Error('write ' + put.status);
     useConfig(cfg);
     render();
@@ -626,7 +659,7 @@ function makePicker(host, cfg) {
       const p = place(value);
       host.innerHTML = `<div class="picked"><span><b>${esc(p.ko)}</b> <span class="c">${esc(p.c)}</span> <span class="cc">${esc(p.sub)}</span></span><button type="button" class="btn line small" data-pk="clear">${cfg.optional ? '빼기' : '바꾸기'}</button></div>`;
     } else {
-      host.innerHTML = `<input type="search" id="${cfg.id}" autocomplete="off" aria-labelledby="${cfg.label}" placeholder="${esc(cfg.placeholder || '도시, 공항, 코드로 찾기. 예: 삿포로, FUK')}">
+      host.innerHTML = `<input type="search" id="${cfg.id}" autocomplete="off" aria-labelledby="${cfg.label}" placeholder="${esc(cfg.placeholder || '도시, 나라, 공항 코드로 찾기. 예: 삿포로, FUK')}">
         <div class="quick">${cfg.quick.map(c => `<button type="button" data-pk="set" data-code="${c}">${esc(place(c).ko)}</button>`).join('')}</div>
         <div class="opts" hidden></div>`;
     }
@@ -634,12 +667,16 @@ function makePicker(host, cfg) {
   function fill(q) {
     const box = $('.opts', host);
     if (!box) return;
-    const list = findPlaces(q);
     if (!String(q).trim()) { box.hidden = true; box.innerHTML = ''; return; }
+    const ready = F.hasAllAirports();
+    // the first search fetches the full list, then shows the results again
+    if (!ready) loadAirports().then(ok => { const i = $('input', host); if (ok && i && i.value === q) fill(q); });
+    const list = findPlaces(q);
     box.hidden = false;
-    box.innerHTML = list.length
+    box.innerHTML = (list.length
       ? list.map(a => `<button type="button" data-pk="set" data-code="${esc(a.c)}"><span><b>${esc(a.ko)}</b><span class="cc">${esc([a.sub, a.cc].filter(Boolean).join(', '))}</span></span><span class="c">${esc(a.c)}</span></button>`).join('')
-      : '<p class="note" style="padding:10px 12px">찾지 못했어요. 공항 코드 세 글자를 넣으면 그대로 쓸 수 있어요.</p>';
+      : (ready ? '<p class="note" style="padding:10px 12px">찾지 못했어요. 한글 이름이 없는 공항은 영어 이름이나 공항 코드 세 글자로 찾을 수 있어요. 예: Hobart, HBA</p>' : ''))
+      + (ready ? '' : '<p class="note" style="padding:10px 12px">전 세계 공항 목록을 불러오는 중이에요.</p>');
   }
   host.addEventListener('click', e => {
     const b = e.target.closest('[data-pk]');

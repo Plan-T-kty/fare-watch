@@ -7,7 +7,7 @@ Claude API 사용료는 `ANTHROPIC_API_KEY`로 넣은 키의 Console 조직에�
 
 ## 돌아가는 순서
 
-1. `.github/workflows/check.yml`이 매일 오전 10시 49분쯤(한국 시간) `checker/check.js`를 실행해요.
+1. `.github/workflows/check.yml`이 하루에 한 번 `checker/check.js`를 실행해요. 예약은 오전 10시 49분(한국 시간)이지만 GitHub가 실제로 시작하는 시각은 훨씬 늦어요. 첫 주에는 날마다 오후 5시 반에서 7시 사이에 돌았어요.
 2. `check.js`가 `data/config.json`의 노선마다 가격 페이지 주소를 Claude API에 넘겨요. Claude가 web fetch 도구로 페이지를 읽고 거기 찍힌 운임을 목록으로 돌려줘요.
    - 읽는 곳: 카약 노선 페이지, 스카이스캐너 노선 페이지. 일본 국내선(후쿠오카→오키나와 같은 구간)은 카약 대신 트래블리스트 날짜별 최저 운임을 읽어요. 이어 가는 여정과 편도 노선은 호텔스컴바인의 날짜별 편도 값도 읽어요.
 3. 코드가 목록을 걸러요. 페이지 글에 그 가격이 실제로 찍혀 있는지 대조하고, 지난 날짜, 경유편, 오는 날이 없는 왕복은 버려요.
@@ -65,7 +65,7 @@ GitHub 알림을 끄려면 `data/config.json`의 `notify.githubIssue`를 `false`
 - **읽지 못하는 사이트가 있을 수 있어요.** Claude API의 web fetch는 사이트가 막아 둔 주소나 자바스크립트로 그려지는 화면은 읽지 못해요. 그런 곳은 건너뛰고 `data/status.json`의 `errors`와 실행 기록에 이유를 남겨요. 한 곳도 읽지 못하면 그날 실행은 실패로 표시돼요.
 - 가격은 검색 사이트에 최근 잡힌 값이에요. 좌석이 팔리면 달라지니 알림을 받으면 링크로 들어가 확인하세요.
 - 엔화 운임은 환율 서비스(open.er-api.com)에서 받은 값으로 바꿔요. 받지 못하면 `fx.jpy100` 값을 써요.
-- GitHub 예약 실행은 붐빌 때 몇 분에서 몇십 분 늦게 시작될 수 있어요.
+- GitHub 예약 실행은 제시간에 시작되지 않아요. 첫 주에는 예약한 시각보다 7~8시간 늦게 돌았어요. 앱에 보이는 "최근 가격 확인" 시각이 실제로 돈 때예요.
 - 노선이나 파일을 고치면(푸시) 가격 확인 없이 화면만 다시 올라가요. API 사용료는 예약 실행과 직접 실행 때만 나가요.
 - 시각을 바꾸려면 `check.yml`의 `cron` 줄을 고쳐요. UTC 기준이라 한국 시간에서 9시간을 빼요.
 
@@ -74,8 +74,16 @@ GitHub 알림을 끄려면 `data/config.json`의 `notify.githubIssue`를 `false`
 | 파일 | 하는 일 |
 |---|---|
 | `checker/check.js` | 가격 확인과 알림. 설치할 패키지 없이 Node만으로 돌아가요 |
-| `core.js` | 공휴일 판정, 일정 분류, 구간 조합, 링크 만들기. 앱과 확인 코드가 같이 써요 |
+| `core.js` | 공휴일 판정, 일정 분류, 구간 조합, 링크 만들기, 한글 이름이 있는 공항 목록. 앱과 확인 코드가 같이 써요 |
+| `airports.js` | 정기편이 다니는 전 세계 공항 목록(한글 이름이 없는 곳). 앱에서 검색할 때 불러와요 |
+| `tools/` | 공항 목록을 다시 만드는 스크립트와 한글 이름 목록 |
 | `index.html`, `app.js`, `mode.js` | 앱 화면 |
 | `data/config.json` | 노선과 목표가 |
 | `data/prices.json`, `data/status.json` | 확인 결과. 실행할 때마다 덮어써요 |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | 홈 화면에 추가했을 때 쓰는 파일 |
+
+## 공항 목록
+
+- 노선 추가 화면에서는 정기편이 다니는 전 세계 공항을 찾을 수 있어요. 한국과 일본의 모든 공항, 그리고 자주 가는 도시에는 한글 이름이 있고, 나머지는 영어 도시 이름이나 공항 코드로 찾아요. 나라 이름(예: 베트남)으로 찾으면 그 나라 공항이 나와요.
+- 공항 자료는 [OurAirports](https://ourairports.com/data/)의 공개 자료(퍼블릭 도메인)예요. 한글 이름은 `tools/curated.py`에 있어요.
+- 목록을 새로 만들려면 OurAirports에서 `airports.csv`를 받아 `python3 tools/build-airports.py airports.csv`를 실행해요. `airports.js`와 `core.js`의 공항 목록이 다시 만들어져요.

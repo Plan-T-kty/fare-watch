@@ -1,5 +1,5 @@
 {
-  "scheduleText": "매일 오전 10시 49분쯤",
+  "scheduleText": "하루 한 번, 보통 오후 6시쯤",
   "model": "claude-haiku-5-5",
   "maxContentTokens": 40000,
   "fx": {
